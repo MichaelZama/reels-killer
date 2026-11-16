@@ -14,5 +14,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "blocca-reels"
+rootProject.name = "reels-killer"
 include(":app")

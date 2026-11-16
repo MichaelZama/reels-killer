@@ -10,7 +10,7 @@ class AudioDucker(private val am: AudioManager) {
     private var mutedByUs = false
 
     fun mute(): String {
-        if (mutedByUs) return "Audio: già silenziato da Blocca-Reels"
+        if (mutedByUs) return "Audio: già silenziato da Reels Killer"
         if (am.isStreamMute(AudioManager.STREAM_MUSIC)) return "Audio: era già muto, non lo tocco"
         am.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_MUTE, 0)
         mutedByUs = true

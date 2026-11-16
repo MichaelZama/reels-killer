@@ -22,6 +22,8 @@ class OverlayManager(
     private val service: AccessibilityService,
     private val scope: CoroutineScope,
     private val log: DiagnosticsLog,
+    /** Lingua della schermata di blocco ("" = sistema). */
+    private val language: () -> String = { "" },
 ) {
     private val wm: WindowManager = service.getSystemService(WindowManager::class.java)
 
@@ -43,7 +45,7 @@ class OverlayManager(
             binder?.bind(model, { onExit() }, { onContinue() })
             return
         }
-        val ctx = ContextThemeWrapper(service, R.style.Theme_BloccaReels)
+        val ctx = ContextThemeWrapper(app.bloccareels.data.Locales.wrap(service, language()), R.style.Theme_BloccaReels)
         val v = LayoutInflater.from(ctx).inflate(R.layout.overlay_block, null)
         val content = v.findViewById<View>(R.id.overlay_content)
         ViewCompat.setOnApplyWindowInsetsListener(v) { _, insets ->
@@ -125,7 +127,7 @@ class OverlayManager(
             layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
         }
         windowAnimations = 0
-        title = "Blocca-Reels"
+        title = "Reels Killer"
     }
 
     private fun dp(v: Int): Int = (v * service.resources.displayMetrics.density).toInt()

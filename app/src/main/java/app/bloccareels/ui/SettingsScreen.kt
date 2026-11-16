@@ -230,6 +230,20 @@ fun SettingsScreen(
             ) { Text(stringResource(R.string.preview_button), fontSize = 15.sp) }
         }
 
+        // --------------------------------------------------------------- Lingua
+        SectionCard(stringResource(R.string.section_language)) {
+            ChoiceRow(
+                options = app.bloccareels.data.Locales.SUPPORTED,
+                selected = settings.language,
+                label = { languageLabel(it) },
+                description = { languageLabel(it) },
+                onSelect = { tag ->
+                    app.bloccareels.data.Locales.applyToUi(tag)
+                    save { repo.setLanguage(tag) }
+                },
+            )
+        }
+
         // -------------------------------------------------------- Aggiornamento
         UpdateSection(c = c)
 
@@ -241,6 +255,15 @@ fun SettingsScreen(
 }
 
 internal val THUMB_SIZE = 64.dp
+
+@Composable
+private fun languageLabel(tag: String): String = stringResource(
+    when (tag) {
+        "it" -> R.string.language_italian
+        "en" -> R.string.language_english
+        else -> R.string.language_system
+    },
+)
 
 fun appLabel(id: String): Int = when (id) {
     AppIds.INSTAGRAM -> R.string.app_instagram

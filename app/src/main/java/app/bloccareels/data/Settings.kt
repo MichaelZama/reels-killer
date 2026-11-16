@@ -64,6 +64,8 @@ data class Settings(
     val levelMedia: List<CustomMedia?> = emptyList(),
     val lastMessageIndex: Int = -1,
     val debugEnabled: Boolean = false,
+    /** "" = lingua del sistema, altrimenti "it" o "en". */
+    val language: String = "",
     val counterDate: String = "",
     val blocksToday: Int = 0,
     val continueToday: Int = 0,

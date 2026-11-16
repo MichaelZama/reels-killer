@@ -10,7 +10,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.core.content.ContextCompat
 import app.bloccareels.ServiceCommand
 import android.os.Bundle
-import androidx.activity.ComponentActivity
+import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
@@ -33,7 +33,7 @@ import app.bloccareels.AppContainer
 import app.bloccareels.container
 import kotlinx.coroutines.launch
 
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.dark(Color.TRANSPARENT),
@@ -73,6 +73,13 @@ private fun AppRoot(c: AppContainer) {
     }
 
     if (!loaded) return
+
+    // Se la lingua è stata cambiata dalle impostazioni di sistema (Android 13+), la salviamo
+    // perché la usino anche servizio e notifica.
+    LaunchedEffect(Unit) {
+        val ui = app.bloccareels.data.Locales.currentUiTag()
+        if (ui != settings.language && ui in app.bloccareels.data.Locales.SUPPORTED) c.settings.setLanguage(ui)
+    }
 
     var screenName by rememberSaveable { mutableStateOf(Screen.SETTINGS.name) }
     val screen = Screen.valueOf(screenName)

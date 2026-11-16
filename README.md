@@ -1,68 +1,71 @@
 <div align="center">
 
-# Blocca-Reels
+# Reels Killer
 
-**Un attimo di pausa prima del prossimo video.**
+**A moment's pause before the next video.**
 
-App Android che si accorge quando stai scorrendo Reels, Shorts o TikTok<br>
-e ti chiede, con calma, se vuoi davvero restare.
+An Android app that notices when you are scrolling Reels, Shorts or TikTok<br>
+and calmly asks whether you really want to stay.
 
 [![Build](https://github.com/MichaelZama/reels-killer/actions/workflows/build.yml/badge.svg)](https://github.com/MichaelZama/reels-killer/actions/workflows/build.yml)
-[![Ultima release](https://img.shields.io/github/v/release/MichaelZama/reels-killer?label=release)](https://github.com/MichaelZama/reels-killer/releases/latest)
+[![Latest release](https://img.shields.io/github/v/release/MichaelZama/reels-killer?label=release)](https://github.com/MichaelZama/reels-killer/releases/latest)
 ![Android 8.0+](https://img.shields.io/badge/Android-8.0%2B-3DDC84?logo=android&logoColor=white)
-[![Licenza GPL-3.0](https://img.shields.io/badge/licenza-GPL--3.0-blue)](LICENSE)
+[![License GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-blue)](LICENSE)
 
-**[⬇️ Scarica l'ultima versione](https://github.com/MichaelZama/reels-killer/releases/latest)**
+**[⬇️ Download the latest version](https://github.com/MichaelZama/reels-killer/releases/latest)**
+
+**English** · [Italiano](README.it.md)
 
 </div>
 
 ---
 
-## Come funziona
+## How it works
 
-Quando entri nei video brevi, sopra il player compare una schermata di pausa. Il resto dell'app continua a funzionare: messaggi, video normali, ricerca.
+When you open short videos, a pause screen appears over the player. The rest of the app keeps working: messages, regular videos, search.
 
-- **Esci** ti porta fuori dai video brevi.
-- **Continua** ti lascia guardare per qualche secondo. Se sei ancora lì, la schermata torna.
+- **Exit** takes you out of short videos.
+- **Continue** lets you watch for a few seconds. If you are still there, the screen comes back.
 
-Non è un divieto: scorrere diventa solo un po' più scomodo, abbastanza da farti chiedere se ne hai voglia davvero.
+It is not a ban. Scrolling just gets a little less comfortable, enough to make you ask yourself whether you really feel like it.
 
-## Funzioni
+## Features
 
 | | |
 |---|---|
-| 🎯 **Mirato** | Interviene solo su Reels di Instagram, Shorts di YouTube, TikTok e Reels di Facebook. Un reel ricevuto in chat si guarda per intero: il blocco scatta al primo swipe. |
-| ⏳ **Attesa crescente** | A ogni "Continua" di fila l'attesa prima di poter continuare si allunga: 2, 5, 10, 15, 20, 30 secondi. |
-| 🪜 **Livelli** | Ogni livello (primo blocco, dopo un Continua, dopo due…) ha il suo messaggio e, se vuoi, la sua immagine, GIF o video con audio. Un livello senza media usa quello del precedente. |
-| 🔇 **Audio** | Durante la pausa l'audio del video viene silenziato e poi ripristinato. |
-| 🔒 **Privato** | Nessun permesso internet: nessun dato lascia il telefono. Non legge i tuoi messaggi e non salva il contenuto dello schermo. |
-| 🌙 **Calmo** | Tema scuro, nessun colore allarmante, "Esci" sempre più facile di "Continua". |
+| 🎯 **Targeted** | Only steps in on Instagram Reels, YouTube Shorts, TikTok and Facebook Reels. A reel someone sends you in a chat plays in full: the block kicks in at the first swipe. |
+| ⏳ **Growing wait** | With each Continue in a row, the wait before you can continue gets longer: 2, 5, 10, 15, 20, 30 seconds. |
+| 🪜 **Levels** | Each level (first block, after one Continue, after two…) has its own message and, if you like, its own image, GIF or video with sound. A level without media uses the previous one's. |
+| 🔇 **Audio** | While paused, the video's audio is muted and restored afterwards. |
+| 🔒 **Private** | No internet permission: no data leaves your phone. It does not read your messages or save what is on screen. |
+| 🌙 **Calm** | Dark theme, no alarming colours, "Exit" always easier than "Continue". |
+| 🌍 **Languages** | English and Italian, with an in-app switch. |
 
-## Installazione
+## Installation
 
-1. Scarica l'APK dall'**[ultima release](https://github.com/MichaelZama/reels-killer/releases/latest)** e aprilo. Se richiesto, consenti al browser di installare app.
-2. Apri Blocca-Reels e segui i tre passaggi del primo avvio.
-3. Attiva il servizio di accessibilità di Blocca-Reels quando l'app te lo chiede.
+1. Download the APK from the **[latest release](https://github.com/MichaelZama/reels-killer/releases/latest)** and open it. If asked, allow your browser to install apps.
+2. Open Reels Killer and follow the three setup steps.
+3. Turn on the Reels Killer accessibility service when the app asks you to.
 
 <details>
-<summary><b>L'interruttore dell'accessibilità è grigio ("Impostazione con limitazioni")</b></summary>
+<summary><b>The accessibility switch is greyed out ("Restricted setting")</b></summary>
 
 <br>
 
-Da Android 13 il sistema protegge l'accessibilità per le app installate fuori dal Play Store.
+Since Android 13 the system protects accessibility for apps installed outside the Play Store.
 
-1. Tocca la voce grigia di Blocca-Reels nelle impostazioni di accessibilità e chiudi l'avviso.
-2. Apri *Impostazioni › App › Blocca-Reels*, tocca **⋮** in alto a destra e scegli **Consenti impostazioni con limitazioni**.
-3. Torna nelle impostazioni di accessibilità e attiva il servizio.
+1. Tap the greyed-out Reels Killer entry in accessibility settings and dismiss the warning.
+2. Open *Settings › Apps › Reels Killer*, tap **⋮** at the top right and choose **Allow restricted settings**.
+3. Go back to accessibility settings and turn the service on.
 
 </details>
 
 <details>
-<summary><b>Google Play Protect blocca l'installazione</b></summary>
+<summary><b>Google Play Protect blocks the installation</b></summary>
 
 <br>
 
-Play Protect blocca le app scaricate che chiedono l'accessibilità. Nel Play Store tocca il tuo profilo › **Play Protect** › ⚙️ e disattiva temporaneamente **Scansiona app con Play Protect**, installa l'APK, poi riattivalo.
+Play Protect blocks downloaded apps that ask for accessibility. In the Play Store tap your profile › **Play Protect** › ⚙️, temporarily turn off **Scan apps with Play Protect**, install the APK, then turn it back on.
 
 </details>
 
@@ -71,58 +74,58 @@ Play Protect blocca le app scaricate che chiedono l'accessibilità. Nel Play Sto
 
 <br>
 
-Questi telefoni chiudono le app in background in modo aggressivo. Nelle informazioni dell'app:
+These phones close background apps aggressively. In the app info:
 
-- attiva **Avvio automatico**;
-- imposta la batteria su **Nessuna restrizione**;
-- evita **Chiusura forzata**, che stacca il servizio di accessibilità.
+- enable **Autostart**;
+- set battery to **No restrictions**;
+- avoid **Force stop**, which disconnects the accessibility service.
 
-Se il servizio si ferma, la schermata principale dell'app lo segnala con "Servizio fermato dal sistema" e un pulsante per sistemarlo.
+If the service stops, the app's main screen says "Service stopped by the system" and offers a button to fix it.
 
 </details>
 
 > [!NOTE]
-> Su Android 17 la *Protezione avanzata* può impedire alle app non di accessibilità di usare questo permesso. Se è attiva, Blocca-Reels non può funzionare.
+> On Android 17, *Advanced Protection* can prevent apps that are not accessibility tools from using this permission. If it is on, Reels Killer cannot work.
 
-## Aggiornamenti
+## Updates
 
-Scarica il nuovo APK dalle [release](https://github.com/MichaelZama/reels-killer/releases), poi in Blocca-Reels apri la sezione **Aggiornamento** e tocca **Installa aggiornamento da file APK**.
+Download the new APK from the [releases](https://github.com/MichaelZama/reels-killer/releases), then in Reels Killer open the **Update** section and tap **Install update from APK file**.
 
-Installato così, l'aggiornamento mantiene impostazioni e permessi e non richiede di riconsentire le impostazioni con limitazioni.
+Installed this way, the update keeps your settings and permissions and does not ask you to allow restricted settings again.
 
-## Permessi
+## Permissions
 
-| Permesso | A cosa serve |
+| Permission | What it is for |
 |---|---|
-| Accessibilità | Capire quale schermata è aperta e mostrare la pausa sopra il player. |
-| Esclusione dal risparmio batteria | Evitare che il sistema fermi il servizio. |
-| Notifiche | La notifica silenziosa "Reels Killer attivo". |
-| Installazione app | Solo per il pulsante "Installa aggiornamento", con un file scelto da te. |
+| Accessibility | Knowing which screen is open and showing the pause over the player. |
+| Battery optimisation exemption | Keeping the system from stopping the service. |
+| Notifications | The silent "Reels Killer is on" notification. |
+| Install apps | Only for the "Install update" button, with a file you pick. |
 
-Internet non è tra questi.
+Internet is not one of them.
 
-## Se il blocco non scatta
+## If blocking does not kick in
 
-Le app cambiano spesso la loro interfaccia, e il rilevamento si basa su regole in [`rules.json`](app/src/main/assets/rules.json).
+Apps change their interface often, and detection relies on rules in [`rules.json`](app/src/main/assets/rules.json).
 
-1. In Blocca-Reels apri **Diagnostica** e tocca **Esporta albero tra 10 s**.
-2. Entro 10 secondi apri la schermata che non viene riconosciuta e aspetta.
-3. Torna nell'app e tocca **Condividi ultimo albero**. Il file contiene solo la struttura della schermata: i testi sono sostituiti dalla loro lunghezza.
+1. In Reels Killer open **Diagnostics** and tap **Export tree in 10 s**.
+2. Within 10 seconds open the screen that is not recognised and wait.
+3. Go back to the app and tap **Share last tree**. The file only contains the structure of the screen: texts are replaced by their length.
 
-Con quel file si possono aggiornare le regole. [Apri una issue](https://github.com/MichaelZama/reels-killer/issues) allegandolo.
+That file is what is needed to update the rules. [Open an issue](https://github.com/MichaelZama/reels-killer/issues) and attach it.
 
-## Compilare da sorgente
+## Building from source
 
-Kotlin e Jetpack Compose, `minSdk` 26. Le build girano su GitHub Actions: ogni push su `main` produce un APK tra gli artefatti, ogni tag `v*` pubblica una release.
+Kotlin and Jetpack Compose, `minSdk` 26. Builds run on GitHub Actions: every push to `main` produces an APK among the artifacts, and every `v*` tag publishes a release.
 
-In locale servono JDK 17 e Android SDK:
+Locally you need JDK 17 and the Android SDK:
 
 ```bash
 ./gradlew testDebugUnitTest assembleDebug
 ```
 
-Per firmare le release la CI legge quattro secrets del repository: `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS` e `KEY_PASSWORD`. Senza secrets l'APK viene firmato con una chiave di debug.
+To sign releases, CI reads four repository secrets: `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS` and `KEY_PASSWORD`. Without them the APK is signed with a debug key.
 
-## Licenza
+## License
 
 [GPL-3.0](LICENSE)

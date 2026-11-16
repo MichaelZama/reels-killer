@@ -50,11 +50,11 @@ jobs:
       - name: Rinomina APK
         run: |
           mkdir -p out
-          cp app/build/outputs/apk/release/*.apk "out/blocca-reels-${GITHUB_REF_NAME//\//-}-${GITHUB_RUN_NUMBER}.apk"
+          cp app/build/outputs/apk/release/*.apk "out/reels-killer-${GITHUB_REF_NAME//\//-}-${GITHUB_RUN_NUMBER}.apk"
 
       - uses: actions/upload-artifact@v7
         with:
-          name: blocca-reels-apk
+          name: reels-killer-apk
           path: out/*.apk
 
       - name: Release

@@ -83,7 +83,7 @@ class ReelsBlockerService : AccessibilityService() {
         log = c.diagnostics
         log.add(LogType.EVENTO, "Servizio in collegamento…")
         ducker = AudioDucker(getSystemService(AudioManager::class.java))
-        overlay = OverlayManager(this, scope, log)
+        overlay = OverlayManager(this, scope, log) { settings.value.language }
 
         val ctrl = BlockController(
             actions = Actions(),
@@ -92,7 +92,7 @@ class ReelsBlockerService : AccessibilityService() {
             scope = scope,
             clock = SystemClock::elapsedRealtime,
             appMeta = { id ->
-                c.engine.appById(id)?.let { AppMeta(it.label, ExitAction.parse(it.exitAction)) }
+                c.engine.appById(id)?.let { AppMeta(localizedSubtitle(id) ?: it.label, ExitAction.parse(it.exitAction)) }
             },
             onTransition = { from, to, reason ->
                 log.add(LogType.TRANSIZIONE, "$from → $to ($reason)")
@@ -245,8 +245,29 @@ class ReelsBlockerService : AccessibilityService() {
 
     // ------------------------------------------------------------- impostazioni
 
+    private var lastLanguage: String? = null
+
+    /** Contesto nella lingua scelta nelle impostazioni dell'app. */
+    private fun localized(): Context = app.bloccareels.data.Locales.wrap(this, settings.value.language)
+
+    private fun localizedSubtitle(appId: String): String? {
+        val res = when (appId) {
+            "instagram" -> R.string.subtitle_instagram
+            "youtube" -> R.string.subtitle_youtube
+            "tiktok" -> R.string.subtitle_tiktok
+            "facebook" -> R.string.subtitle_facebook
+            else -> return null
+        }
+        return localized().getString(res)
+    }
+
     private fun onSettingsChanged(s: Settings) {
         val ctrl = controller ?: return
+        if (lastLanguage != null && lastLanguage != s.language) {
+            // Cambio di lingua: la notifica va riscritta.
+            cancelStatusNotification()
+        }
+        lastLanguage = s.language
         val app = ctrl.currentAppId
         if (!s.masterEnabled || (app != null && !s.isAppEnabled(app))) {
             guarded("disattivazione") { ctrl.onDisabled() }
@@ -325,14 +346,15 @@ class ReelsBlockerService : AccessibilityService() {
             return
         }
         val nm = getSystemService(NotificationManager::class.java)
+        val text = localized()
         // Canale della vecchia notifica di debug, non piu' usato.
         guarded("canale debug") {
             nm.cancel(OLD_NOTIFICATION_DEBUG)
             nm.deleteNotificationChannel(OLD_CHANNEL_DEBUG)
         }
         nm.createNotificationChannel(
-            NotificationChannel(CHANNEL_STATUS, getString(R.string.status_channel_name), NotificationManager.IMPORTANCE_MIN).apply {
-                description = getString(R.string.status_channel_description)
+            NotificationChannel(CHANNEL_STATUS, text.getString(R.string.status_channel_name), NotificationManager.IMPORTANCE_MIN).apply {
+                description = text.getString(R.string.status_channel_description)
                 setShowBadge(false)
                 enableVibration(false)
                 setSound(null, null)
@@ -350,7 +372,7 @@ class ReelsBlockerService : AccessibilityService() {
         )
         val n = NotificationCompat.Builder(this, CHANNEL_STATUS)
             .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle(getString(R.string.status_notification_title))
+            .setContentTitle(text.getString(R.string.status_notification_title))
             .setOngoing(true)
             .setSilent(true)
             .setShowWhen(false)

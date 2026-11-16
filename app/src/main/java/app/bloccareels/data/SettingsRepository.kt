@@ -36,7 +36,8 @@ private val Context.settingsStore: DataStore<Preferences> by preferencesDataStor
 /** Unica porta verso DataStore (sezione 9). */
 class SettingsRepository(
     context: Context,
-    private val defaultMessages: List<String>,
+    /** Messaggi iniziali nella lingua indicata ("" = sistema). */
+    private val defaultMessages: (language: String) -> List<String>,
     scope: CoroutineScope,
     private val today: () -> String = { LocalDate.now().toString() },
 ) {
@@ -56,7 +57,7 @@ class SettingsRepository(
     /** Ultimo valore noto, per chi deve leggere in modo sincrono (servizio e controller). */
     val state: StateFlow<Settings> = settingsFlow
         .onEach { _loaded.value = true }
-        .stateIn(scope, SharingStarted.Eagerly, Settings(messages = defaultMessages))
+        .stateIn(scope, SharingStarted.Eagerly, Settings(messages = defaultMessages("")))
 
     fun todayString(): String = today()
 
@@ -68,7 +69,8 @@ class SettingsRepository(
         val storedMessages = p[K.messagesJson]
             ?.let { runCatching { Json.decodeFromString(messagesSerializer, it) }.getOrNull() }
             ?.takeIf { list -> list.any { it.isNotBlank() } }
-        val messages = storedMessages ?: defaultMessages
+        val language = p[K.language].orEmpty().takeIf { it in Locales.SUPPORTED }.orEmpty()
+        val messages = storedMessages ?: defaultMessages(language)
         val levelMedia: List<CustomMedia?> = if (storedMessages == null) {
             emptyList()
         } else {
@@ -92,6 +94,7 @@ class SettingsRepository(
             customMedia = media,
             messages = messages,
             levelMedia = levelMedia,
+            language = language,
             lastMessageIndex = p[K.lastMessage] ?: -1,
             debugEnabled = p[K.debug] ?: false,
             counterDate = p[K.counterDate].orEmpty(),
@@ -125,6 +128,8 @@ class SettingsRepository(
         it.remove(K.mediaKind)
         if (it[K.illustration] == Illustration.PERSONALIZZATO.key) it[K.illustration] = Illustration.TRAMONTO.key
     }
+
+    suspend fun setLanguage(tag: String) = edit { it[K.language] = tag }
 
     suspend fun setDebugEnabled(v: Boolean) = edit { it[K.debug] = v }
     suspend fun setLastMessageIndex(v: Int) = edit { it[K.lastMessage] = v }
@@ -181,6 +186,7 @@ class SettingsRepository(
         val mediaPath = stringPreferencesKey("custom_media_path")
         val mediaKind = stringPreferencesKey("custom_media_kind")
         val levelMediaJson = stringPreferencesKey("level_media_json")
+        val language = stringPreferencesKey("language")
         val messagesJson = stringPreferencesKey("messages_json")
         val lastMessage = intPreferencesKey("last_message_index")
         val debug = booleanPreferencesKey("debug_enabled")

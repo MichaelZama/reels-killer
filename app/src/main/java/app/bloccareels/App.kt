@@ -70,7 +70,9 @@ class AppContainer(context: Context) {
 
     val settings = SettingsRepository(
         context = context,
-        defaultMessages = context.resources.getStringArray(R.array.default_messages).toList(),
+        defaultMessages = { tag ->
+            app.bloccareels.data.Locales.wrap(context, tag).resources.getStringArray(R.array.default_messages).toList()
+        },
         scope = appScope,
     )
 
