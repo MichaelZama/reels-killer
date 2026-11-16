@@ -160,6 +160,8 @@
     <!-- Update -->
     <string name="section_update">Update</string>
     <string name="update_version">Installed version: %1$s</string>
+    <string name="update_where">New versions are published on GitHub, in the Reels Killer project page.</string>
+    <string name="update_open_releases">Open the latest release on GitHub</string>
     <string name="update_note">Download the new APK from the releases page, then tap below and pick it: the app updates without having to allow restricted settings again.</string>
     <string name="update_permission_note">To update itself, Reels Killer must be allowed to install apps: allow \"Install unknown apps\" and come back here.</string>
     <string name="update_button">Install update from APK file</string>

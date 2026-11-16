@@ -18,7 +18,7 @@ android {
         targetSdk = 36
         // versionCode cresce a ogni build di CI, così ogni APK si installa sopra il precedente.
         versionCode = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 1
-        versionName = "1.3.0"
+        versionName = "1.3.1"
     }
 
     signingConfigs {

@@ -1,5 +1,7 @@
 package app.bloccareels.ui
 
+import android.content.Intent
+import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -9,6 +11,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -25,6 +28,10 @@ import app.bloccareels.AppContainer
 import app.bloccareels.R
 import app.bloccareels.update.UpdateInstaller
 import kotlinx.coroutines.launch
+
+/** Pagina delle release: da qui l'utente scarica le nuove versioni. */
+const val REPO_URL = "https://github.com/MichaelZama/reels-killer"
+const val RELEASES_URL = "$REPO_URL/releases/latest"
 
 /** Installazione degli aggiornamenti da un APK scaricato, senza "impostazioni con limitazioni". */
 @Composable
@@ -63,6 +70,15 @@ fun UpdateSection(c: AppContainer) {
 
     SectionCard(stringResource(R.string.section_update)) {
         Text(stringResource(R.string.update_version, version), color = BrColors.Testo, fontSize = 15.sp)
+        Text(stringResource(R.string.update_where), color = BrColors.TestoSecondario, fontSize = 13.sp)
+        TextButton(
+            onClick = {
+                SystemStatus.start(context, Intent(Intent.ACTION_VIEW, Uri.parse(RELEASES_URL)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            },
+            modifier = Modifier.heightIn(min = 48.dp),
+        ) {
+            Text(stringResource(R.string.update_open_releases), color = BrColors.Accento, fontSize = 15.sp)
+        }
         Text(
             stringResource(if (canInstall) R.string.update_note else R.string.update_permission_note),
             color = BrColors.TestoSecondario,
