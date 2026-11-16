@@ -1,0 +1,11 @@
+*.pdf
+.gradle/
+build/
+local.properties
+.idea/
+*.iml
+.kotlin/
+*.jks
+*.p12
+*.keystore
+captures/

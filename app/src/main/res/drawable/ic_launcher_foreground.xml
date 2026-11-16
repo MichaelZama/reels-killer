@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Riquadro verticale di un video breve con il simbolo di pausa: "metti in pausa lo scroll". -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#4FB0A5"
+        android:strokeWidth="4.5"
+        android:strokeLineJoin="round"
+        android:pathData="M45,28 L63,28 A8,8 0 0 1 71,36 L71,72 A8,8 0 0 1 63,80 L45,80 A8,8 0 0 1 37,72 L37,36 A8,8 0 0 1 45,28 Z" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#E8ECEF"
+        android:strokeWidth="5"
+        android:strokeLineCap="round"
+        android:pathData="M49.5,46 L49.5,62 M58.5,46 L58.5,62" />
+</vector>

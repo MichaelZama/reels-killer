@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Tazza con vapore. Disegno a tratto da 3dp su 144dp. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="144dp"
+    android:height="144dp"
+    android:viewportWidth="144"
+    android:viewportHeight="144">
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#E8ECEF"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M36,66 L96,66 L96,92 C96,106 86,114 74,114 L58,114 C46,114 36,106 36,92 Z" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#E8ECEF"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M96,74 L102,74 C110,74 114,79 114,85 C114,91 110,96 102,96 L96,96" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#9AA7B4"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:pathData="M28,124 L112,124" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#4FB0A5"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M54,54 C48,46 60,40 54,30 M68,54 C62,46 74,40 68,30 M82,54 C76,46 88,40 82,30" />
+</vector>

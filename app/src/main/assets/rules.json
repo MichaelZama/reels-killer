@@ -1,0 +1,76 @@
+{
+  "version": 1,
+  "apps": [
+    {
+      "id": "instagram",
+      "packages": ["com.instagram.android"],
+      "label": "Sei nei Reels di Instagram.",
+      "exitAction": "back",
+      "rules": [
+        {
+          "name": "scheda_reels",
+          "mode": "feed",
+          "allOf": [
+            { "viewId": "clips_viewer_view_pager" },
+            { "viewId": "clips_tab", "selected": true }
+          ]
+        },
+        {
+          "name": "reel_singolo",
+          "mode": "single",
+          "pagerViewId": "clips_viewer_view_pager",
+          "allOf": [ { "viewId": "clips_viewer_view_pager" } ]
+        }
+      ]
+    },
+    {
+      "id": "youtube",
+      "packages": ["com.google.android.youtube"],
+      "label": "Sei negli Shorts di YouTube.",
+      "exitAction": "back",
+      "rules": [
+        {
+          "name": "scheda_shorts",
+          "mode": "feed",
+          "anyOf": [
+            { "viewId": "reel_recycler" },
+            { "viewId": "reel_watch_fragment_root" }
+          ],
+          "allOf": [ { "descAnyOf": ["Shorts"], "selected": true } ]
+        },
+        {
+          "name": "short_singolo",
+          "mode": "single",
+          "pagerViewId": "reel_recycler",
+          "anyOf": [
+            { "viewId": "reel_recycler" },
+            { "viewId": "reel_watch_fragment_root" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "tiktok",
+      "packages": ["com.zhiliaoapp.musically", "com.ss.android.ugc.trill"],
+      "label": "Sei su TikTok.",
+      "exitAction": "home",
+      "rules": [ { "name": "tutta_la_app", "mode": "feed", "always": true } ]
+    },
+    {
+      "id": "facebook",
+      "packages": ["com.facebook.katana"],
+      "label": "Sei nei Reels di Facebook.",
+      "exitAction": "back",
+      "rules": [
+        {
+          "name": "scheda_reels",
+          "mode": "feed",
+          "allOf": [
+            { "descAnyOf": ["Reels", "Reel"], "selected": true },
+            { "scrollable": true, "minHeightFraction": 0.8 }
+          ]
+        }
+      ]
+    }
+  ]
+}

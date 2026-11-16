@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Foglia con nervature. Disegno a tratto da 3dp su 144dp. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="144dp"
+    android:height="144dp"
+    android:viewportWidth="144"
+    android:viewportHeight="144">
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#4FB0A5"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M38,108 C30,64 60,30 110,28 C112,78 84,110 38,108 Z" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#E8ECEF"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:pathData="M28,118 L38,108 L96,44" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#9AA7B4"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:pathData="M58,86 L58,68 M70,72 L70,54 M82,58 L82,44 M58,86 L78,86 M70,72 L90,72" />
+</vector>

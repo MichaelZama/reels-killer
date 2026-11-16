@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Nome provvisorio: si cambia solo qui. -->
+    <string name="app_name">Blocca-Reels</string>
+
+    <!-- Servizio di accessibilità -->
+    <string name="service_label">Blocca-Reels</string>
+    <string name="service_summary">Interrompe Reels, Shorts e TikTok con una schermata di pausa.</string>
+    <string name="service_description">Blocca-Reels legge la struttura della schermata per accorgersi quando sei nei video brevi (Reels di Instagram, Shorts di YouTube, TikTok, Reels di Facebook) e mostra una schermata di pausa. Non legge i tuoi messaggi, non salva nulla e non ha accesso a internet.</string>
+
+    <!-- Messaggi di default della schermata di blocco (sezione 4.6) -->
+    <string-array name="default_messages">
+        <item>Era quello che volevi fare?</item>
+        <item>Ancora qui. Ti serve davvero?</item>
+        <item>Cosa stavi cercando quando hai aperto l\'app?</item>
+        <item>Un respiro. Poi decidi tu.</item>
+        <item>Tra dieci minuti sarai contento di essere rimasto?</item>
+        <item>C\'è qualcosa di meglio da fare adesso?</item>
+    </string-array>
+
+    <!-- Schermata di blocco -->
+    <string name="overlay_exit">Esci</string>
+    <string name="overlay_exit_description">Esci dai video brevi</string>
+    <string name="overlay_continue">Continua</string>
+    <string name="overlay_continue_description">Continua a guardare per pochi secondi</string>
+    <string name="overlay_continue_in">Continua tra %1$d s</string>
+    <string name="overlay_continue_in_description">Continua sarà disponibile tra %1$d secondi</string>
+    <string name="overlay_counter">%1$dª volta oggi</string>
+    <string name="overlay_counter_escalating">%1$dª volta oggi · l\'attesa cresce a ogni Continua</string>
+
+    <!-- Primo avvio (sezione 4.6) -->
+    <string name="onb_step">Passaggio %1$d di %2$d</string>
+    <string name="onb1_title">Meno scroll, senza rinunce</string>
+    <string name="onb1_text">Quando entri nei video brevi, una schermata ti chiede se vuoi davvero restare. Messaggi e video normali continuano a funzionare.</string>
+    <string name="onb2_title">Serve un permesso</string>
+    <string name="onb2_text">Per accorgersi che sei nei Reels, l\'app deve leggere la struttura della schermata. Non legge i tuoi messaggi, non salva nulla e non ha accesso a internet. Android mostrerà un avviso: è lo stesso per tutte le app che usano questo permesso.</string>
+    <string name="onb2_restricted">Se l\'interruttore è grigio o compare \"Impostazione con limitazioni\": apri Impostazioni › App › Blocca-Reels, tocca i tre puntini in alto a destra e scegli \"Consenti impostazioni con limitazioni\". Poi torna qui.</string>
+    <string name="onb2_open">Apri impostazioni di accessibilità</string>
+    <string name="onb2_open_app_info">Apri le informazioni sull\'app</string>
+    <string name="onb2_done">Servizio attivo</string>
+    <string name="onb3_title">Tienila sveglia</string>
+    <string name="onb3_text">Alcuni telefoni chiudono le app in background per risparmiare batteria. Escludi questa app, altrimenti il blocco può smettere di funzionare.</string>
+    <string name="onb3_open">Escludi dal risparmio batteria</string>
+    <string name="onb3_done">App esclusa dal risparmio batteria</string>
+    <string name="onb_next">Avanti</string>
+    <string name="onb_skip">Più tardi</string>
+    <string name="onb_finish">Inizia</string>
+
+    <!-- Impostazioni: stato -->
+    <string name="settings_title">Blocca-Reels</string>
+    <string name="section_status">Stato</string>
+    <string name="master_switch">Blocco attivo</string>
+    <string name="interruptions_today">%1$d interruzioni oggi</string>
+    <string name="service_on">Servizio di accessibilità attivo</string>
+    <string name="service_off">Servizio di accessibilità spento</string>
+    <string name="service_paused">Blocco in pausa · il servizio resta acceso</string>
+    <string name="service_stopped">Servizio fermato dal sistema</string>
+    <string name="service_stopped_note">Nelle impostazioni di accessibilità spegni e riaccendi Blocca-Reels.</string>
+    <string name="xiaomi_autostart_note">Su Xiaomi attiva \"Avvio automatico\" per Blocca-Reels: così il sistema riavvia il servizio da solo dopo una chiusura o un aggiornamento.</string>
+    <string name="xiaomi_autostart_button">Apri Avvio automatico</string>
+    <string name="battery_warning">Il risparmio batteria può fermare il blocco</string>
+    <string name="fix">Risolvi</string>
+
+    <!-- Impostazioni: app -->
+    <string name="section_apps">App monitorate</string>
+    <string name="app_instagram">Instagram Reels</string>
+    <string name="app_youtube">YouTube Shorts</string>
+    <string name="app_tiktok">TikTok</string>
+    <string name="app_facebook">Facebook Reels</string>
+    <string name="app_not_installed">non installata</string>
+    <string name="app_experimental">sperimentale</string>
+
+    <!-- Impostazioni: comportamento -->
+    <string name="section_behavior">Comportamento</string>
+    <string name="truce_label">Tregua dopo \"Continua\"</string>
+    <string name="delay_label">Attesa prima di \"Continua\"</string>
+    <string name="seconds_short">%1$d s</string>
+    <string name="seconds_choice_description">%1$d secondi</string>
+    <string name="escalating_label">Attesa crescente</string>
+    <string name="escalating_note">Si allunga a ogni Continua</string>
+    <string name="mute_label">Abbassa l\'audio durante il blocco</string>
+
+    <!-- Impostazioni: schermata di blocco -->
+    <string name="section_block_screen">Schermata di blocco</string>
+    <string name="messages_label">Livelli e messaggi</string>
+    <string name="messages_count">%1$d livelli</string>
+    <string name="illustration_label">Disegno</string>
+    <string name="ill_tramonto">Tramonto</string>
+    <string name="ill_tazza">Tazza</string>
+    <string name="ill_foglia">Foglia</string>
+    <string name="ill_custom">Tuo</string>
+    <string name="media_hint">Con \"Tuo\" puoi usare una tua immagine, una GIF o un video breve con audio (fino a %1$d secondi).</string>
+    <string name="media_change">Cambia</string>
+    <string name="media_remove">Rimuovi</string>
+    <string name="media_too_long">Il video è troppo lungo: massimo %1$d secondi.</string>
+    <string name="media_too_big">Il file è troppo grande: massimo 100 MB.</string>
+    <string name="media_unsupported">Formato non supportato.</string>
+    <string name="media_failed">Non è stato possibile importare il file.</string>
+    <string name="selected">selezionato</string>
+    <string name="preview_button">Anteprima blocco</string>
+    <string name="preview_subtitle">Anteprima: così apparirà la schermata.</string>
+
+    <!-- Messaggi -->
+    <string name="messages_title">Livelli</string>
+    <string name="messages_hint">Livello 1 compare al primo blocco, livello 2 dopo il primo Continua, e così via; finiti i livelli resta l\'ultimo. Dopo 10 minuti senza blocchi si riparte dal livello 1. Tocca il riquadro per scegliere un\'immagine, una GIF o un video (fino a %1$d secondi): un livello senza media usa quello del livello precedente.</string>
+    <string name="message_field">Frase %1$d</string>
+    <string name="message_remove">Togli la frase %1$d</string>
+    <string name="message_add">Aggiungi frase</string>
+    <string name="level_first">Livello %1$d · primo blocco</string>
+    <string name="level_n">Livello %1$d · dopo %2$d Continua</string>
+    <string name="level_add">Aggiungi livello</string>
+    <string name="level_remove">Togli livello</string>
+    <string name="level_media_remove">Togli media</string>
+    <string name="level_media_description">Scegli immagine, GIF o video per il livello %1$d</string>
+    <string name="messages_reset">Ripristina le frasi iniziali</string>
+    <string name="back">Indietro</string>
+    <string name="remove">Togli</string>
+
+    <!-- Diagnostica (sezione 11) -->
+    <string name="section_diagnostics">Diagnostica</string>
+    <string name="diag_expand">Mostra diagnostica</string>
+    <string name="diag_collapse">Nascondi diagnostica</string>
+    <string name="debug_mode">Modalità debug</string>
+    <string name="debug_mode_note">Mostra una notifica con \"Esporta albero\"</string>
+    <string name="diag_last_package">Ultimo package: %1$s</string>
+    <string name="diag_last_event">Ultimo evento: %1$s</string>
+    <string name="diag_state">Stato del blocco: %1$s</string>
+    <string name="diag_detection">Ultimo rilevamento: %1$s</string>
+    <string name="diag_service">Servizio collegato: %1$s</string>
+    <string name="diag_none">nessuno</string>
+    <string name="yes">sì</string>
+    <string name="no">no</string>
+    <string name="diag_log_empty">Il log è vuoto.</string>
+    <string name="diag_share_log">Condividi log</string>
+    <string name="diag_share_tree">Condividi ultimo albero</string>
+    <string name="diag_clear">Svuota</string>
+    <string name="diag_no_tree">Nessun albero esportato. Attiva la modalità debug e usa la notifica dentro l\'app da analizzare.</string>
+    <string name="diag_versions">App %1$s · regole versione %2$d</string>
+    <string name="diag_share_title">Condividi</string>
+    <string name="diag_notifications_denied">Senza il permesso delle notifiche non compare \"Esporta albero\".</string>
+    <string name="log_type_evento">evento</string>
+    <string name="log_type_rilevamento">rilevamento</string>
+    <string name="log_type_transizione">transizione</string>
+    <string name="log_type_errore">errore</string>
+
+    <!-- Notifica di stato -->
+    <string name="status_channel_name">Stato del blocco</string>
+    <string name="status_channel_description">Notifica silenziosa che indica che il blocco è attivo.</string>
+    <string name="status_notification_title">Reels Killer attivo</string>
+    <string name="diag_export_note">Per aggiornare le regole: tocca il pulsante, apri entro 10 secondi la schermata da analizzare (es. gli Shorts) e aspetta. Poi torna qui e usa \"Condividi ultimo albero\".</string>
+    <string name="diag_export_button">Esporta albero tra %1$d s</string>
+    <string name="diag_export_not_connected">Il servizio non è collegato: attivalo nelle impostazioni di accessibilità.</string>
+
+    <!-- Notifica di debug (non più usata) -->
+    <string name="debug_channel_name">Modalità debug</string>
+    <string name="debug_notification_title">Blocca-Reels · debug</string>
+    <string name="debug_notification_text">Apri la schermata da analizzare e tocca \"Esporta albero\".</string>
+    <string name="debug_notification_export">Esporta albero</string>
+
+    <!-- Aggiornamento -->
+    <string name="section_update">Aggiornamento</string>
+    <string name="update_version">Versione installata: %1$s</string>
+    <string name="update_note">Scarica il nuovo APK dalla pagina delle release, poi toccalo qui sotto e sceglilo: l\'app si aggiorna senza dover riconsentire le impostazioni con limitazioni.</string>
+    <string name="update_permission_note">Per aggiornarsi da sola, Blocca-Reels deve poter installare app: consenti \"Installa app sconosciute\" e torna qui.</string>
+    <string name="update_button">Installa aggiornamento da file APK</string>
+    <string name="update_permission_button">Consenti l\'installazione degli aggiornamenti</string>
+    <string name="update_installing">Installazione in corso…</string>
+    <string name="update_failed">Aggiornamento non riuscito: %1$s</string>
+
+    <string name="error_no_activity">Nessuna app disponibile per questa azione.</string>
+</resources>

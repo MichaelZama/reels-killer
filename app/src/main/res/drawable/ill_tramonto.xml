@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Tramonto: mezzo sole sull'orizzonte, raggi e onde. Disegno a tratto da 3dp su 144dp. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="144dp"
+    android:height="144dp"
+    android:viewportWidth="144"
+    android:viewportHeight="144">
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#4FB0A5"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M42,84 A30,30 0 0 1 102,84" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#9AA7B4"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:pathData="M72,34 L72,44 M38,50 L45,57 M106,50 L99,57 M24,78 L33,78 M120,78 L111,78" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#E8ECEF"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:pathData="M22,92 L122,92" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#9AA7B4"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:pathData="M40,104 L104,104 M56,116 L88,116" />
+</vector>
