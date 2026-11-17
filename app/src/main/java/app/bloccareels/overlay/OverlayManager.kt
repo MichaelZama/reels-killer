@@ -37,8 +37,6 @@ class OverlayManager(
     /** Viste in dissolvenza di uscita, da rimuovere comunque in [removeAllNow]. */
     private val leaving = mutableSetOf<View>()
 
-    val isShowing: Boolean get() = view != null
-
     fun show(model: OverlayModel) {
         val existing = view
         if (existing != null) {

@@ -4,14 +4,7 @@ import app.bloccareels.data.CustomMedia
 import app.bloccareels.data.Illustration
 import app.bloccareels.data.MediaKind
 import app.bloccareels.detect.Detection
-
-enum class ExitAction {
-    BACK, HOME;
-
-    companion object {
-        fun parse(value: String?): ExitAction = if (value.equals("home", ignoreCase = true)) HOME else BACK
-    }
-}
+import app.bloccareels.detect.ExitAction
 
 enum class BlockState { INATTIVO, OSSERVAZIONE, BLOCCATO, TREGUA }
 
@@ -45,11 +38,10 @@ interface BlockActions {
     fun evaluateNow(): Detection
 }
 
-/** Contatori giornalieri e rotazione dei messaggi, salvati dal repository. */
+/** Contatori giornalieri, salvati dal repository. */
 interface Counters {
     /** Incrementa i blocchi di oggi e restituisce il nuovo totale. */
     fun onBlockShown(): Int
     fun onContinue()
     fun onExit()
-    fun onMessageShown(index: Int)
 }

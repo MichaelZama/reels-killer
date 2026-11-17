@@ -269,7 +269,8 @@ fun appLabel(id: String): Int = when (id) {
     AppIds.INSTAGRAM -> R.string.app_instagram
     AppIds.YOUTUBE -> R.string.app_youtube
     AppIds.TIKTOK -> R.string.app_tiktok
-    else -> R.string.app_facebook
+    AppIds.FACEBOOK -> R.string.app_facebook
+    else -> error("App sconosciuta: $id")
 }
 
 private enum class StatusKind { OK, WARN, PAUSE }

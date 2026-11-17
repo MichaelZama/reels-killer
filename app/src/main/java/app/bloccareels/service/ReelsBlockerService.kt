@@ -26,12 +26,12 @@ import app.bloccareels.block.AppMeta
 import app.bloccareels.block.BlockActions
 import app.bloccareels.block.BlockController
 import app.bloccareels.block.Counters
-import app.bloccareels.block.ExitAction
 import app.bloccareels.block.OverlayModel
 import app.bloccareels.container
 import app.bloccareels.data.Settings
 import app.bloccareels.data.SettingsRepository
 import app.bloccareels.detect.Detection
+import app.bloccareels.detect.ExitAction
 import app.bloccareels.detect.describe
 import app.bloccareels.diag.DiagnosticsLog
 import app.bloccareels.diag.LogType
@@ -93,7 +93,7 @@ class ReelsBlockerService : AccessibilityService() {
             scope = scope,
             clock = SystemClock::elapsedRealtime,
             appMeta = { id ->
-                c.engine.appById(id)?.let { AppMeta(localizedSubtitle(id) ?: it.label, ExitAction.parse(it.exitAction)) }
+                c.engine.appById(id)?.let { AppMeta(localizedSubtitle(id) ?: it.label, it.exitAction) }
             },
             onTransition = { from, to, reason ->
                 log.add(LogType.TRANSIZIONE, "$from → $to ($reason)")
@@ -477,9 +477,5 @@ private class RepoCounters(
 
     override fun onExit() {
         scope.launch { repo.increment(SettingsRepository.Counter.EXIT) }
-    }
-
-    override fun onMessageShown(index: Int) {
-        scope.launch { repo.setLastMessageIndex(index) }
     }
 }

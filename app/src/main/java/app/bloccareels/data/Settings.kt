@@ -62,8 +62,6 @@ data class Settings(
     val messages: List<String> = emptyList(),
     /** Media di ogni livello, allineato a [messages]; null = usa quello del livello precedente. */
     val levelMedia: List<CustomMedia?> = emptyList(),
-    val lastMessageIndex: Int = -1,
-    val debugEnabled: Boolean = false,
     /** "" = lingua del sistema, altrimenti "it" o "en". */
     val language: String = "",
     val counterDate: String = "",
@@ -71,7 +69,10 @@ data class Settings(
     val continueToday: Int = 0,
     val exitToday: Int = 0,
 ) {
-    /** Media da mostrare: solo se è stato scelto "personalizzato" e il file esiste. */
+    /**
+     * Media generale: solo se è stato scelto "personalizzato". Non controlla che il file esista:
+     * se manca, la schermata di blocco non mostra nessuna immagine.
+     */
     val activeCustomMedia: CustomMedia?
         get() = if (illustration == Illustration.PERSONALIZZATO) customMedia else null
 

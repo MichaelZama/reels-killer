@@ -2,6 +2,7 @@ package app.bloccareels.block
 
 import app.bloccareels.data.Settings
 import app.bloccareels.detect.Detection
+import app.bloccareels.detect.ExitAction
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -53,8 +54,6 @@ class BlockController(
     val observingPagerViewId: String?
         get() = if (state == BlockState.OSSERVAZIONE) observedPager else null
 
-    val consecutiveContinueCount: Int get() = consecutiveContinues
-
     /**
      * Niente in corso: nessuno stato attivo, nessuna schermata, audio intatto, nessun controllo dopo "Esci".
      * In questo stato [onForegroundLeft] non fa nulla.
@@ -89,7 +88,7 @@ class BlockController(
             BlockState.BLOCCATO -> when (d) {
                 Detection.None -> {
                     noneStreak++
-                    if (noneStreak >= 2) {
+                    if (noneStreak >= NONE_STREAK_TO_LEAVE) {
                         hideAll()
                         toIdle("uscito dai video brevi")
                     } else {
@@ -188,7 +187,6 @@ class BlockController(
         // Livello = numero di "Continua" consecutivi; finiti i livelli si resta sull'ultimo.
         val messages = s.messages.ifEmpty { listOf("") }
         val index = minOf(consecutiveContinues, messages.lastIndex)
-        safe("indice messaggio") { counters.onMessageShown(index) }
 
         val blocks = try {
             counters.onBlockShown()
@@ -295,8 +293,22 @@ class BlockController(
     }
 
     companion object {
+        /** Dopo "Esci", attesa prima di controllare se si è davvero usciti; se no si va alla Home. */
         const val EXIT_CHECK_MS = 600L
+
+        /** Dopo un solo "Nessuno" in BLOCCATO, attesa prima del ricontrollo. */
         const val CONFIRM_NONE_MS = 300L
+
+        /**
+         * Un tocco su "Continua" arrivato fino a questo anticipo è accettato: il conto alla rovescia
+         * sulla schermata e l'orologio del controller possono differire di qualche millisecondo.
+         */
         const val CONTINUE_TOLERANCE_MS = 250L
+
+        /**
+         * "Nessuno" consecutivi che tolgono la schermata: uno solo può capitare durante
+         * una transizione dell'interfaccia.
+         */
+        const val NONE_STREAK_TO_LEAVE = 2
     }
 }

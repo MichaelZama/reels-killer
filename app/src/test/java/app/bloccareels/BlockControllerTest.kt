@@ -5,10 +5,10 @@ import app.bloccareels.block.BlockActions
 import app.bloccareels.block.BlockController
 import app.bloccareels.block.BlockState
 import app.bloccareels.block.Counters
-import app.bloccareels.block.ExitAction
 import app.bloccareels.block.OverlayModel
 import app.bloccareels.data.Settings
 import app.bloccareels.detect.Detection
+import app.bloccareels.detect.ExitAction
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.TestScope
@@ -43,11 +43,9 @@ private class FakeCounters : Counters {
     var blocks = 0
     var continues = 0
     var exits = 0
-    val messages = mutableListOf<Int>()
     override fun onBlockShown(): Int = ++blocks
     override fun onContinue() { continues++ }
     override fun onExit() { exits++ }
-    override fun onMessageShown(index: Int) { messages += index }
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -153,7 +151,6 @@ class BlockControllerTest {
         assertFalse(e.a.visible)
         assertFalse(e.a.mutedNow)
         assertEquals(1, e.k.continues)
-        assertEquals(1, e.c.consecutiveContinueCount)
     }
 
     @Test

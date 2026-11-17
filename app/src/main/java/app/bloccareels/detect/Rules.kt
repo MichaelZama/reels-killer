@@ -1,5 +1,6 @@
 package app.bloccareels.detect
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
@@ -18,23 +19,40 @@ data class AppRules(
     val id: String,
     val packages: List<String>,
     val label: String = "",
-    val exitAction: String = "back",
+    val exitAction: ExitAction = ExitAction.BACK,
     val rules: List<Rule> = emptyList(),
 )
 
 @Serializable
 data class Rule(
     val name: String,
-    val mode: String = MODE_FEED,
+    val mode: RuleMode = RuleMode.FEED,
     val always: Boolean = false,
     val allOf: List<Condition> = emptyList(),
     val anyOf: List<Condition> = emptyList(),
     val pagerViewId: String? = null,
-) {
-    companion object {
-        const val MODE_FEED = "feed"
-        const val MODE_SINGLE = "single"
-    }
+)
+
+/** Come si tratta una regola che corrisponde. */
+@Serializable
+enum class RuleMode {
+    /** Sezione dei video brevi: si blocca subito. */
+    @SerialName("feed")
+    FEED,
+
+    /** Video singolo, per esempio aperto da una chat: si blocca solo al primo swipe. */
+    @SerialName("single")
+    SINGLE,
+}
+
+/** Cosa fa "Esci" nell'app ospite. */
+@Serializable
+enum class ExitAction {
+    @SerialName("back")
+    BACK,
+
+    @SerialName("home")
+    HOME,
 }
 
 @Serializable
@@ -53,16 +71,12 @@ object RulesLoader {
     /**
      * Legge il file delle regole. In caso di errore restituisce un insieme vuoto
      * e chiama [onError]: l'app resta in piedi, semplicemente non blocca nulla.
+     * Un valore sconosciuto in "mode" o "exitAction" rende non valido tutto il file;
+     * il file incluso nell'app è verificato dai test.
      */
     fun parse(text: String, onError: (String) -> Unit = {}): RulesFile =
         try {
-            val parsed = json.decodeFromString(RulesFile.serializer(), text)
-            val invalid = parsed.apps.flatMap { app ->
-                app.rules.filter { it.mode != Rule.MODE_FEED && it.mode != Rule.MODE_SINGLE }
-                    .map { "${app.id}/${it.name}" }
-            }
-            if (invalid.isNotEmpty()) onError("Regole con mode sconosciuto: ${invalid.joinToString()}")
-            parsed
+            json.decodeFromString(RulesFile.serializer(), text)
         } catch (e: Exception) {
             onError("File delle regole non valido: ${e.message?.take(200)}")
             RulesFile.EMPTY

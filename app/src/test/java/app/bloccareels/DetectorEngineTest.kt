@@ -2,6 +2,7 @@ package app.bloccareels
 
 import app.bloccareels.detect.Detection
 import app.bloccareels.detect.DetectorEngine
+import app.bloccareels.detect.ExitAction
 import app.bloccareels.detect.RulesFile
 import app.bloccareels.detect.RulesLoader
 import app.bloccareels.detect.UiNode
@@ -54,6 +55,7 @@ class DetectorEngineTest {
     fun `il file delle regole incluso si legge`() {
         assertEquals(4, rules.apps.size)
         assertTrue(rules.version >= 1)
+        assertEquals(ExitAction.HOME, rules.apps.first { it.id == "tiktok" }.exitAction)
     }
 
     @Test
@@ -157,6 +159,17 @@ class DetectorEngineTest {
         assertEquals(1, errors.size)
         val snap = FakeSnapshot("com.zhiliaoapp.musically", emptyList())
         assertEquals(Detection.None, DetectorEngine(parsed).detect(snap, all))
+    }
+
+    @Test
+    fun `mode o exitAction sconosciuti rendono non valido il file`() {
+        val badMode = """{"version":1,"apps":[{"id":"x","packages":["p"],"rules":[{"name":"r","mode":"feeed","always":true}]}]}"""
+        val badExit = """{"version":1,"apps":[{"id":"x","packages":["p"],"exitAction":"sideways","rules":[]}]}"""
+        for (json in listOf(badMode, badExit)) {
+            val errors = mutableListOf<String>()
+            assertEquals(RulesFile.EMPTY, RulesLoader.parse(json) { errors += it })
+            assertEquals(1, errors.size)
+        }
     }
 
     // ------------------------------------- ordine di valutazione: prima le condizioni con viewId

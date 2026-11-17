@@ -8,8 +8,6 @@ class DetectorEngine(val rules: RulesFile) {
     private val byPackage: Map<String, AppRules> =
         rules.apps.flatMap { app -> app.packages.map { it to app } }.toMap()
 
-    val allPackages: Set<String> get() = byPackage.keys
-
     fun appForPackage(pkg: String?): AppRules? = pkg?.let { byPackage[it] }
 
     fun appById(id: String): AppRules? = rules.apps.firstOrNull { it.id == id }
@@ -25,13 +23,13 @@ class DetectorEngine(val rules: RulesFile) {
         for (rule in app.rules) {
             if (!ruleMatches(rule, ctx)) continue
             return when (rule.mode) {
-                Rule.MODE_SINGLE -> Detection.Single(
+                RuleMode.SINGLE -> Detection.Single(
                     appId = app.id,
                     rule = rule.name,
                     pagerViewId = rule.pagerViewId,
                     fingerprint = rule.pagerViewId?.let { snapshot.fingerprint(it) },
                 )
-                else -> Detection.Feed(app.id, rule.name)
+                RuleMode.FEED -> Detection.Feed(app.id, rule.name)
             }
         }
         return Detection.None

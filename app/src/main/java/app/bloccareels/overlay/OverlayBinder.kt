@@ -105,6 +105,8 @@ class OverlayBinder(
             Illustration.TRAMONTO -> R.drawable.ill_tramonto
             Illustration.TAZZA -> R.drawable.ill_tazza
             Illustration.FOGLIA -> R.drawable.ill_foglia
+            // Non viene disegnato: con "personalizzato" la schermata mostra il media dell'utente.
+            // Serve solo a rendere completo il when.
             Illustration.PERSONALIZZATO -> R.drawable.ill_tramonto
         }
     }
