@@ -45,7 +45,7 @@ object AppIds {
 }
 
 /**
- * Preferenze dell'utente (sezione 9). Kotlin puro: lo usa anche il controller nei test.
+ * Preferenze dell'utente. Kotlin puro: lo usa anche il controller nei test.
  * I contatori sono già riportati a zero se la data salvata non è quella di oggi.
  */
 data class Settings(

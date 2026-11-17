@@ -19,7 +19,7 @@ import app.bloccareels.data.Settings
 import app.bloccareels.overlay.OverlayBinder
 
 /**
- * Anteprima della schermata di blocco dentro l'app (UC-09).
+ * Anteprima della schermata di blocco dentro l'app.
  * Usa lo stesso layout dell'overlay; non tocca contatori né audio.
  */
 @Composable

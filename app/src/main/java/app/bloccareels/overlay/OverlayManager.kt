@@ -15,7 +15,7 @@ import app.bloccareels.diag.DiagnosticsLog
 import kotlinx.coroutines.CoroutineScope
 
 /**
- * Finestra della schermata di blocco (sezione 8). Tiene un solo riferimento alla vista.
+ * Finestra della schermata di blocco. Tiene un solo riferimento alla vista.
  * Va usato solo dal thread principale.
  */
 class OverlayManager(

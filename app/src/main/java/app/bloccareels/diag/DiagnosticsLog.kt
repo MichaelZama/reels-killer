@@ -17,7 +17,7 @@ data class DiagStatus(
     val serviceConnected: Boolean = false,
 )
 
-/** Buffer circolare in memoria (sezione 11). Kotlin puro. Non salva mai il contenuto delle schermate. */
+/** Buffer circolare in memoria. Kotlin puro. Non salva mai il contenuto delle schermate. */
 class DiagnosticsLog(
     private val capacity: Int = 200,
     private val clock: () -> Long = System::currentTimeMillis,

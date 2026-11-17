@@ -23,7 +23,7 @@ class SystemMusicStream(private val am: AudioManager) : MusicStream {
 }
 
 /**
- * Silenzia e ripristina il flusso multimediale (sezione 8.3).
+ * Silenzia e ripristina il flusso multimediale.
  * Ogni metodo restituisce una riga per il log di diagnostica.
  *
  * Il muto è un'impostazione di sistema: se il processo muore mentre l'audio è silenziato

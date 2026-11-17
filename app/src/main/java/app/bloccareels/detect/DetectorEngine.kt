@@ -1,7 +1,7 @@
 package app.bloccareels.detect
 
 /**
- * Motore delle regole (sezione 6). Kotlin puro: lavora solo su [UiSnapshot].
+ * Motore delle regole. Kotlin puro: lavora solo su [UiSnapshot].
  */
 class DetectorEngine(val rules: RulesFile) {
 

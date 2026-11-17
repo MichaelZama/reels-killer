@@ -40,7 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.bloccareels.R
 
-/** Primo avvio in tre passaggi (RF-14, UC-01). */
+/** Primo avvio in tre passaggi. */
 @Composable
 fun OnboardingScreen(serviceOn: Boolean, batteryOk: Boolean, onFinish: () -> Unit) {
     val context = LocalContext.current

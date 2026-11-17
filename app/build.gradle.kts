@@ -4,7 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
-// La firma release legge percorso e password da variabili d'ambiente (sezione 12.1).
+// La firma release legge percorso e password da variabili d'ambiente.
 // Se mancano (build locale o secrets non ancora configurati) si usa la chiave di debug.
 val keystorePath: String? = System.getenv("KEYSTORE_PATH")?.takeIf { it.isNotBlank() && file(it).exists() && file(it).length() > 0 }
 

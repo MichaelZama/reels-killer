@@ -84,7 +84,7 @@ class BlockControllerTest {
         return Env(c, a, k, flow)
     }
 
-    // ------------------------------------------------ righe della tabella 7.2
+    // ------------------------------------------------ transizioni della macchina a stati
 
     @Test
     fun `INATTIVO + Feed porta a BLOCCATO con schermata, audio muto e contatore`() = runTest {
