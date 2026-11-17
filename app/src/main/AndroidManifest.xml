@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Nessun permesso INTERNET: è un requisito (RNF-01). -->
+    <!-- Nessun permesso INTERNET, per scelta: nessun dato lascia il telefono. -->
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- Solo per installare gli aggiornamenti scelti dall'utente (nessun download). -->

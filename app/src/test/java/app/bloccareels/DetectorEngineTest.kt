@@ -27,8 +27,15 @@ class FakeSnapshot(
     override val screenHeightPx: Int = 2400,
     private val fp: Int? = null,
 ) : UiSnapshot {
+    /** Quante volte è stato visitato l'albero intero. */
+    var walks = 0
+        private set
+
     override fun findByViewId(id: String): List<UiNode> = nodes.filter { it.viewId == id }
-    override fun walk(maxNodes: Int): Sequence<UiNode> = nodes.asSequence().take(maxNodes)
+    override fun walk(maxNodes: Int): Sequence<UiNode> {
+        walks++
+        return nodes.asSequence().take(maxNodes)
+    }
     override fun fingerprint(viewId: String): Int? = fp
 }
 
@@ -150,5 +157,48 @@ class DetectorEngineTest {
         assertEquals(1, errors.size)
         val snap = FakeSnapshot("com.zhiliaoapp.musically", emptyList())
         assertEquals(Detection.None, DetectorEngine(parsed).detect(snap, all))
+    }
+
+    // ------------------------------------- ordine di valutazione: prima le condizioni con viewId
+
+    @Test
+    fun `senza il player degli Shorts l'albero non viene visitato`() {
+        // Home di YouTube: la scheda Shorts non è selezionata e il player non c'è.
+        val snap = FakeSnapshot(
+            "com.google.android.youtube",
+            listOf(FakeNode(contentDescription = "Home", isSelected = true), FakeNode(contentDescription = "Shorts")),
+        )
+        assertEquals(Detection.None, engine.detect(snap, all))
+        assertEquals(0, snap.walks)
+    }
+
+    @Test
+    fun `con il player degli Shorts l'albero si visita una volta sola`() {
+        val snap = FakeSnapshot(
+            "com.google.android.youtube",
+            listOf(FakeNode(viewId = "reel_recycler"), FakeNode(contentDescription = "Shorts", isSelected = true)),
+        )
+        assertEquals(Detection.Feed("youtube", "scheda_shorts"), engine.detect(snap, all))
+        assertEquals(1, snap.walks)
+    }
+
+    @Test
+    fun `una condizione allOf con viewId che fallisce evita la visita anche se anyOf e lenta`() {
+        val json = """
+            {"version":1,"apps":[{"id":"instagram","packages":["p"],"rules":[
+              {"name":"r","mode":"feed","allOf":[{"viewId":"a"}],"anyOf":[{"descAnyOf":["X"]}]}
+            ]}]}
+        """.trimIndent()
+        val e = DetectorEngine(RulesLoader.parse(json))
+
+        val senzaA = FakeSnapshot("p", listOf(FakeNode(contentDescription = "X")))
+        assertEquals(Detection.None, e.detect(senzaA, setOf("instagram")))
+        assertEquals(0, senzaA.walks)
+
+        val conA = FakeSnapshot("p", listOf(FakeNode(viewId = "a"), FakeNode(contentDescription = "X")))
+        assertEquals(Detection.Feed("instagram", "r"), e.detect(conA, setOf("instagram")))
+
+        val conASenzaX = FakeSnapshot("p", listOf(FakeNode(viewId = "a"), FakeNode(contentDescription = "Y")))
+        assertEquals(Detection.None, e.detect(conASenzaX, setOf("instagram")))
     }
 }

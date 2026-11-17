@@ -33,7 +33,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-/** Palette della sezione 4.2. Un solo tema, scuro. */
+/** Palette dell'app. Un solo tema, scuro. */
 object BrColors {
     val Sfondo = Color(0xFF12181F)
     val Superficie = Color(0xFF1C2530)

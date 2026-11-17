@@ -3,11 +3,15 @@ package app.bloccareels
 import android.app.Application
 import android.content.Context
 import android.content.pm.PackageManager
+import android.media.AudioManager
 import app.bloccareels.data.SettingsRepository
 import app.bloccareels.detect.DetectorEngine
 import app.bloccareels.detect.RulesFile
 import app.bloccareels.detect.RulesLoader
 import app.bloccareels.diag.DiagnosticsLog
+import app.bloccareels.diag.LogType
+import app.bloccareels.overlay.AudioDucker
+import app.bloccareels.overlay.SystemMusicStream
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.Dispatchers
@@ -22,6 +26,20 @@ class App : Application() {
         installCrashRecorder()
         container = AppContainer(this)
         reportPreviousCrash()
+        recoverMutedAudio()
+    }
+
+    /** Se il processo precedente è morto con l'audio silenziato da noi, lo riattiva (vedi [AudioDucker]). */
+    private fun recoverMutedAudio() {
+        try {
+            val ducker = AudioDucker(
+                SystemMusicStream(getSystemService(AudioManager::class.java)),
+                AudioDucker.markerFile(this),
+            )
+            ducker.recoverAfterProcessDeath()?.let { container.diagnostics.add(LogType.EVENTO, it) }
+        } catch (e: Exception) {
+            container.diagnostics.error("Ripristino audio all'avvio", e)
+        }
     }
 
     /**

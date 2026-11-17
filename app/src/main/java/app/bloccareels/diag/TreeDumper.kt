@@ -8,7 +8,7 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 /**
- * Esporta l'albero della finestra in primo piano (sezione 11.2).
+ * Esporta l'albero della finestra in primo piano.
  * I testi non vengono mai scritti: solo la loro lunghezza. Le descrizioni solo se brevi.
  */
 object TreeDumper {

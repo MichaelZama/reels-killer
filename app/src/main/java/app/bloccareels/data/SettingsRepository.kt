@@ -33,7 +33,7 @@ private data class StoredMedia(val path: String, val kind: String)
 
 private val Context.settingsStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
-/** Unica porta verso DataStore (sezione 9). */
+/** Unica porta verso DataStore. */
 class SettingsRepository(
     context: Context,
     /** Messaggi iniziali nella lingua indicata ("" = sistema). */

@@ -35,12 +35,18 @@ jobs:
           if [ -n "$KEYSTORE_BASE64" ]; then
             echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
             echo "Keystore di release presente."
+          elif [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            # Una release firmata con la chiave di debug non si aggiornerebbe sopra quelle pubblicate.
+            echo "::error::Secret KEYSTORE_BASE64 assente: niente release senza la chiave di release."
+            exit 1
           else
             echo "::warning::Secret KEYSTORE_BASE64 assente: l'APK sara' firmato con una chiave di debug e non si aggiornera' sopra versioni firmate diversamente."
           fi
 
       - name: Build
         env:
+          # Sui tag Gradle si ferma se il keystore manca o e' vuoto, invece di firmare con la chiave di debug.
+          REQUIRE_RELEASE_SIGNING: ${{ startsWith(github.ref, 'refs/tags/v') }}
           KEYSTORE_PATH: ${{ runner.temp }}/release.jks
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}

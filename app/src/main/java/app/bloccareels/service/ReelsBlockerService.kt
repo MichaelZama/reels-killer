@@ -38,6 +38,7 @@ import app.bloccareels.diag.LogType
 import app.bloccareels.diag.TreeDumper
 import app.bloccareels.overlay.AudioDucker
 import app.bloccareels.overlay.OverlayManager
+import app.bloccareels.overlay.SystemMusicStream
 import app.bloccareels.ui.MainActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -49,7 +50,7 @@ import kotlinx.coroutines.launch
 
 /**
  * Servizio di accessibilità: riceve gli eventi, limita la frequenza, valuta le regole
- * ed esegue i comandi del [BlockController] (sezioni 5.3, 6, 8).
+ * ed esegue i comandi del [BlockController].
  */
 class ReelsBlockerService : AccessibilityService() {
 
@@ -82,7 +83,7 @@ class ReelsBlockerService : AccessibilityService() {
         c = applicationContext.container
         log = c.diagnostics
         log.add(LogType.EVENTO, "Servizio in collegamento…")
-        ducker = AudioDucker(getSystemService(AudioManager::class.java))
+        ducker = AudioDucker(SystemMusicStream(getSystemService(AudioManager::class.java)), AudioDucker.markerFile(this))
         overlay = OverlayManager(this, scope, log) { settings.value.language }
 
         val ctrl = BlockController(
@@ -161,6 +162,16 @@ class ReelsBlockerService : AccessibilityService() {
         if (evPkg == packageName || evPkg == SYSTEM_UI || evPkg in imePackages) return
 
         val type = event.eventType
+
+        // Il servizio riceve gli eventi di tutte le app. Finché non c'è niente in corso, di un'app non
+        // monitorata conta solo il cambio di finestra (per accorgersi di quando se ne entra in una monitorata):
+        // gli altri eventi si scartano senza interrogare il sistema sulla finestra in primo piano.
+        if (type != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED && ctrl.isIdle &&
+            !c.engine.isMonitored(evPkg, s.enabledAppIds)
+        ) {
+            return
+        }
+
         val now = SystemClock.elapsedRealtime()
 
         val fgPkg = foregroundRoot()?.packageName?.toString() ?: evPkg
@@ -189,7 +200,7 @@ class ReelsBlockerService : AccessibilityService() {
             }
         }
 
-        // Limite di frequenza (sezione 6.5).
+        // Limite di frequenza.
         if (type == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED || now - lastEvalAt >= THROTTLE_MS) {
             pendingEval?.cancel()
             pendingEval = null
@@ -232,7 +243,7 @@ class ReelsBlockerService : AccessibilityService() {
         }
     }
 
-    /** Radice della finestra applicativa in primo piano (sezione 6.1, punto 2). */
+    /** Radice della finestra applicativa in primo piano. */
     private fun foregroundRoot(): AccessibilityNodeInfo? {
         val ws = try { windows } catch (_: Exception) { null }.orEmpty()
         if (ws.isNotEmpty()) {
@@ -313,7 +324,7 @@ class ReelsBlockerService : AccessibilityService() {
 
     // -------------------------------------------------------------- diagnostica
 
-    /** Esporta l'albero della finestra in primo piano dopo [delaySeconds] secondi (sezione 11.2). */
+    /** Esporta l'albero della finestra in primo piano dopo [delaySeconds] secondi. */
     private fun exportTree(delaySeconds: Int) {
         log.add(LogType.EVENTO, "Esportazione albero tra $delaySeconds s: apri la schermata da analizzare")
         scope.launch {
@@ -402,7 +413,7 @@ class ReelsBlockerService : AccessibilityService() {
         emptySet()
     }
 
-    /** RNF-04: nessuna eccezione deve uscire dal servizio. */
+    /** Nessuna eccezione deve uscire dal servizio: farebbe chiudere l'app. */
     private fun guarded(what: String, block: () -> Unit) {
         try {
             block()

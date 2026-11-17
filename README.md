@@ -124,7 +124,7 @@ Locally you need JDK 17 and the Android SDK:
 ./gradlew testDebugUnitTest assembleDebug
 ```
 
-To sign releases, CI reads four repository secrets: `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS` and `KEY_PASSWORD`. Without them the APK is signed with a debug key.
+To sign releases, CI reads four repository secrets: `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS` and `KEY_PASSWORD`. Without them the builds from `main` are signed with a debug key, while a `v*` tag fails instead of publishing a release that could not update the previous ones.
 
 ## License
 

@@ -84,7 +84,7 @@ class BlockControllerTest {
         return Env(c, a, k, flow)
     }
 
-    // ------------------------------------------------ righe della tabella 7.2
+    // ------------------------------------------------ transizioni della macchina a stati
 
     @Test
     fun `INATTIVO + Feed porta a BLOCCATO con schermata, audio muto e contatore`() = runTest {
@@ -481,5 +481,37 @@ class BlockControllerTest {
         )
         assertEquals(generale, conGenerale.mediaForLevel(0))
         assertEquals(null, Settings(messages = listOf("a"), customMedia = generale).mediaForLevel(3))
+    }
+
+    // ------------------------------------- isIdle (il servizio scarta gli eventi delle altre app)
+
+    @Test
+    fun `isIdle e vero solo quando non c'e niente in corso`() = runTest {
+        val e = env()
+        assertTrue(e.c.isIdle)
+
+        e.c.onDetection(single)
+        assertFalse("OSSERVAZIONE", e.c.isIdle)
+        e.c.onDetection(Detection.None)
+        assertTrue(e.c.isIdle)
+
+        e.c.onDetection(feed)
+        assertFalse("BLOCCATO", e.c.isIdle)
+        e.c.onContinueTapped()
+        assertEquals(BlockState.TREGUA, e.c.state)
+        assertFalse("TREGUA", e.c.isIdle)
+        e.c.onForegroundLeft()
+        assertTrue(e.c.isIdle)
+    }
+
+    @Test
+    fun `dopo Esci isIdle resta falso finche non finisce il controllo`() = runTest {
+        val e = env()
+        e.c.onDetection(feed)
+        e.c.onExitTapped()
+        assertEquals(BlockState.INATTIVO, e.c.state)
+        assertFalse(e.c.isIdle)
+        advanceTimeBy(BlockController.EXIT_CHECK_MS + 1)
+        assertTrue(e.c.isIdle)
     }
 }

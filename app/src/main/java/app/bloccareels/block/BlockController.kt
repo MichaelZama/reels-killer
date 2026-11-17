@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 /**
- * Macchina a stati del blocco (sezione 7). Kotlin puro: tutti gli effetti passano da [BlockActions],
+ * Macchina a stati del blocco. Kotlin puro: tutti gli effetti passano da [BlockActions],
  * i timer sono coroutine su [scope] e il tempo arriva da [clock], così nei test si usa il tempo virtuale.
  *
  * Tutti i metodi vanno chiamati dallo stesso thread (nel servizio: il thread principale).
@@ -54,6 +54,13 @@ class BlockController(
         get() = if (state == BlockState.OSSERVAZIONE) observedPager else null
 
     val consecutiveContinueCount: Int get() = consecutiveContinues
+
+    /**
+     * Niente in corso: nessuno stato attivo, nessuna schermata, audio intatto, nessun controllo dopo "Esci".
+     * In questo stato [onForegroundLeft] non fa nulla.
+     */
+    val isIdle: Boolean
+        get() = state == BlockState.INATTIVO && !exiting && !overlayShown && !muted
 
     // ---------------------------------------------------------------- eventi
 
@@ -138,9 +145,9 @@ class BlockController(
         }
     }
 
-    /** L'app in primo piano non è più un'app ospite monitorata (UC-08). */
+    /** L'app in primo piano non è più un'app ospite monitorata. */
     fun onForegroundLeft() {
-        if (state == BlockState.INATTIVO && !exiting && !overlayShown && !muted) return
+        if (isIdle) return
         reset("uscito dall'app ospite")
     }
 

@@ -1,7 +1,7 @@
 package app.bloccareels.detect
 
 /**
- * Motore delle regole (sezione 6). Kotlin puro: lavora solo su [UiSnapshot].
+ * Motore delle regole. Kotlin puro: lavora solo su [UiSnapshot].
  */
 class DetectorEngine(val rules: RulesFile) {
 
@@ -37,13 +37,25 @@ class DetectorEngine(val rules: RulesFile) {
         return Detection.None
     }
 
+    /**
+     * Prima le condizioni con viewId, che sono una ricerca mirata; poi quelle senza, che richiedono
+     * di visitare l'albero. Se fallisce una condizione veloce la visita non si fa: per esempio nella
+     * home di YouTube manca il player degli Shorts e la scheda selezionata non viene cercata.
+     */
     private fun ruleMatches(rule: Rule, ctx: EvalContext): Boolean {
         if (rule.always) return true
         if (rule.allOf.isEmpty() && rule.anyOf.isEmpty()) return false
-        if (!rule.allOf.all { conditionMatches(it, ctx) }) return false
-        if (rule.anyOf.isNotEmpty() && rule.anyOf.none { conditionMatches(it, ctx) }) return false
+        val (fastAllOf, slowAllOf) = rule.allOf.partition { it.viewId != null }
+        val anyOfIsFast = rule.anyOf.all { it.viewId != null }
+        if (!fastAllOf.all { conditionMatches(it, ctx) }) return false
+        if (anyOfIsFast && !anyOfMatches(rule, ctx)) return false
+        if (!slowAllOf.all { conditionMatches(it, ctx) }) return false
+        if (!anyOfIsFast && !anyOfMatches(rule, ctx)) return false
         return true
     }
+
+    private fun anyOfMatches(rule: Rule, ctx: EvalContext): Boolean =
+        rule.anyOf.isEmpty() || rule.anyOf.any { conditionMatches(it, ctx) }
 
     private fun conditionMatches(c: Condition, ctx: EvalContext): Boolean {
         val candidates: List<UiNode> =

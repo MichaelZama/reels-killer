@@ -11,7 +11,7 @@ import android.widget.Toast
 import app.bloccareels.R
 import app.bloccareels.service.ReelsBlockerService
 
-/** Stato del sistema e scorciatoie verso le schermate di sistema (sezione 10.3). */
+/** Stato del sistema e scorciatoie verso le schermate di sistema. */
 object SystemStatus {
 
     fun isServiceEnabled(context: Context): Boolean {
