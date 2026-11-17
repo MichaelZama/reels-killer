@@ -118,6 +118,8 @@ Con quel file si possono aggiornare le regole. [Apri una issue](https://github.c
 
 Kotlin e Jetpack Compose, `minSdk` 26. Le build girano su GitHub Actions: ogni push su `main` produce un APK tra gli artefatti, ogni tag `v*` pubblica una release.
 
+Per una panoramica del codice vedi [ARCHITECTURE.md](ARCHITECTURE.md) (in inglese).
+
 In locale servono JDK 17 e Android SDK:
 
 ```bash

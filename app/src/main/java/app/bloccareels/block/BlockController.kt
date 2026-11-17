@@ -11,8 +11,28 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 /**
- * The blocking state machine. Plain Kotlin: every side effect goes through [BlockActions],
- * timers are coroutines on [scope] and time comes from [clock], so tests run on virtual time.
+ * The blocking state machine. The states are described in [BlockState].
+ *
+ * | From      | Event                                                   | To        |
+ * |-----------|---------------------------------------------------------|-----------|
+ * | IDLE      | Feed detected                                           | BLOCKED   |
+ * | IDLE      | Single detected                                         | OBSERVING |
+ * | OBSERVING | swipe of the pager, fingerprint change, or Feed         | BLOCKED   |
+ * | OBSERVING | Single in another app                                   | OBSERVING |
+ * | OBSERVING | None                                                    | IDLE      |
+ * | BLOCKED   | Continue, once the wait is over                         | TRUCE     |
+ * | BLOCKED   | Exit                                                    | IDLE      |
+ * | BLOCKED   | None [NONE_STREAK_TO_LEAVE] times in a row              | IDLE      |
+ * | TRUCE     | truce over, Feed or Single still detected               | BLOCKED   |
+ * | TRUCE     | truce over, None                                        | IDLE      |
+ * | any       | screen off, service stopped, host app left, disabled    | IDLE      |
+ *
+ * Detections are ignored during TRUCE and for [EXIT_CHECK_MS] after Exit. A single None in
+ * BLOCKED schedules a recheck after [CONFIRM_NONE_MS], even if no events arrive.
+ * The wait before Continue comes from [DelayPolicy] and grows with consecutive Continue taps.
+ *
+ * Plain Kotlin: every side effect goes through [BlockActions], timers are coroutines on [scope]
+ * and time comes from [clock], so tests run on virtual time.
  *
  * All methods must be called from the same thread (in the service: the main thread).
  */

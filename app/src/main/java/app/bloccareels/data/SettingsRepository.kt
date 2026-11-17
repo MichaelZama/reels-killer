@@ -172,6 +172,7 @@ class SettingsRepository(
         p[key] = (p[key] ?: 0) + 1
     }
 
+    /** DataStore keys. They are saved on the device: renaming one loses that setting. */
     private object K {
         val master = booleanPreferencesKey("master_enabled")
         val onboarding = booleanPreferencesKey("onboarding_done")

@@ -6,7 +6,26 @@ import app.bloccareels.data.MediaKind
 import app.bloccareels.detect.Detection
 import app.bloccareels.detect.ExitAction
 
-enum class BlockState { IDLE, OBSERVING, BLOCKED, TRUCE }
+/** States of [BlockController]; the transitions are listed there. */
+enum class BlockState {
+    /** Nothing in progress: no short videos on screen. */
+    IDLE,
+
+    /**
+     * A single short video is open, for example a reel sent in a chat. It plays in full:
+     * the block starts at the first swipe, or when the video's fingerprint changes.
+     */
+    OBSERVING,
+
+    /** The block screen is shown. The audio is muted if that setting is on and no custom video plays. */
+    BLOCKED,
+
+    /**
+     * The user tapped Continue: short videos are usable for a few seconds
+     * (`Settings.truceSeconds`), then the screen is checked again.
+     */
+    TRUCE,
+}
 
 /** What the controller needs to know about a host app: block screen subtitle and what "Exit" does. */
 data class AppMeta(val label: String, val exitAction: ExitAction)
