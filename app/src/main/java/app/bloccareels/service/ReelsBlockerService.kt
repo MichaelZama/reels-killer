@@ -38,6 +38,7 @@ import app.bloccareels.diag.LogType
 import app.bloccareels.diag.TreeDumper
 import app.bloccareels.overlay.AudioDucker
 import app.bloccareels.overlay.OverlayManager
+import app.bloccareels.overlay.SystemMusicStream
 import app.bloccareels.ui.MainActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -82,7 +83,7 @@ class ReelsBlockerService : AccessibilityService() {
         c = applicationContext.container
         log = c.diagnostics
         log.add(LogType.EVENTO, "Servizio in collegamento…")
-        ducker = AudioDucker(getSystemService(AudioManager::class.java))
+        ducker = AudioDucker(SystemMusicStream(getSystemService(AudioManager::class.java)), AudioDucker.markerFile(this))
         overlay = OverlayManager(this, scope, log) { settings.value.language }
 
         val ctrl = BlockController(
@@ -161,6 +162,16 @@ class ReelsBlockerService : AccessibilityService() {
         if (evPkg == packageName || evPkg == SYSTEM_UI || evPkg in imePackages) return
 
         val type = event.eventType
+
+        // Il servizio riceve gli eventi di tutte le app. Finché non c'è niente in corso, di un'app non
+        // monitorata conta solo il cambio di finestra (per accorgersi di quando se ne entra in una monitorata):
+        // gli altri eventi si scartano senza interrogare il sistema sulla finestra in primo piano.
+        if (type != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED && ctrl.isIdle &&
+            !c.engine.isMonitored(evPkg, s.enabledAppIds)
+        ) {
+            return
+        }
+
         val now = SystemClock.elapsedRealtime()
 
         val fgPkg = foregroundRoot()?.packageName?.toString() ?: evPkg
