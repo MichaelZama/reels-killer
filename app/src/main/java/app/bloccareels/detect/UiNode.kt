@@ -1,6 +1,6 @@
 package app.bloccareels.detect
 
-/** Vista astratta della schermata in primo piano (sezione 6.6). Nessuna dipendenza da Android. */
+/** Vista astratta della schermata in primo piano. Nessuna dipendenza da Android. */
 interface UiSnapshot {
     val packageName: String
     val screenHeightPx: Int
@@ -8,7 +8,7 @@ interface UiSnapshot {
     fun walk(maxNodes: Int): Sequence<UiNode>
 
     /**
-     * Impronta del video corrente (sezione 6.4): hash dei primi tre testi non vuoti
+     * Impronta del video corrente: hash dei primi tre testi non vuoti
      * dei discendenti del contenitore [viewId]. Null se non calcolabile.
      * Non viene mai salvata né registrata nel log.
      */

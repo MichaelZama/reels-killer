@@ -1,6 +1,6 @@
 package app.bloccareels.block
 
-/** Calcolo dell'attesa prima che "Continua" diventi cliccabile (sezione 7.3). */
+/** Calcolo dell'attesa prima che "Continua" diventi cliccabile. */
 object DelayPolicy {
     /** Secondi di attesa per numero di "Continua" consecutivi. */
     val SCALA = listOf(0, 2, 5, 10, 15, 20, 30)

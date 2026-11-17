@@ -55,7 +55,7 @@ private const val EXPORT_DELAY_SECONDS = 10
 
 private val timeFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss").withZone(ZoneId.systemDefault())
 
-/** Sezione di diagnostica (sezione 11), chiusa di default. */
+/** Sezione di diagnostica, chiusa di default. */
 @Composable
 fun DiagnosticsSection(c: AppContainer, settings: Settings) {
     val context = LocalContext.current

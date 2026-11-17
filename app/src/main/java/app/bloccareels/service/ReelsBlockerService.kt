@@ -50,7 +50,7 @@ import kotlinx.coroutines.launch
 
 /**
  * Servizio di accessibilità: riceve gli eventi, limita la frequenza, valuta le regole
- * ed esegue i comandi del [BlockController] (sezioni 5.3, 6, 8).
+ * ed esegue i comandi del [BlockController].
  */
 class ReelsBlockerService : AccessibilityService() {
 
@@ -200,7 +200,7 @@ class ReelsBlockerService : AccessibilityService() {
             }
         }
 
-        // Limite di frequenza (sezione 6.5).
+        // Limite di frequenza.
         if (type == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED || now - lastEvalAt >= THROTTLE_MS) {
             pendingEval?.cancel()
             pendingEval = null
@@ -243,7 +243,7 @@ class ReelsBlockerService : AccessibilityService() {
         }
     }
 
-    /** Radice della finestra applicativa in primo piano (sezione 6.1, punto 2). */
+    /** Radice della finestra applicativa in primo piano. */
     private fun foregroundRoot(): AccessibilityNodeInfo? {
         val ws = try { windows } catch (_: Exception) { null }.orEmpty()
         if (ws.isNotEmpty()) {
@@ -324,7 +324,7 @@ class ReelsBlockerService : AccessibilityService() {
 
     // -------------------------------------------------------------- diagnostica
 
-    /** Esporta l'albero della finestra in primo piano dopo [delaySeconds] secondi (sezione 11.2). */
+    /** Esporta l'albero della finestra in primo piano dopo [delaySeconds] secondi. */
     private fun exportTree(delaySeconds: Int) {
         log.add(LogType.EVENTO, "Esportazione albero tra $delaySeconds s: apri la schermata da analizzare")
         scope.launch {
@@ -413,7 +413,7 @@ class ReelsBlockerService : AccessibilityService() {
         emptySet()
     }
 
-    /** RNF-04: nessuna eccezione deve uscire dal servizio. */
+    /** Nessuna eccezione deve uscire dal servizio: farebbe chiudere l'app. */
     private fun guarded(what: String, block: () -> Unit) {
         try {
             block()

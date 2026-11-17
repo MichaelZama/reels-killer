@@ -52,7 +52,7 @@ import app.bloccareels.data.Settings
 import app.bloccareels.overlay.OverlayBinder
 import kotlinx.coroutines.launch
 
-/** Schermata impostazioni unica e scorrevole (sezione 4.5). */
+/** Schermata impostazioni unica e scorrevole. */
 @Composable
 fun SettingsScreen(
     c: AppContainer,

@@ -33,7 +33,7 @@ data class OverlayModel(
     val playsOwnAudio: Boolean get() = customMedia?.kind == MediaKind.VIDEO
 }
 
-/** Comandi che il controller manda verso Android (sezione 7.4). */
+/** Comandi che il controller manda verso Android. */
 interface BlockActions {
     fun showOverlay(model: OverlayModel)
     fun hideOverlay()
