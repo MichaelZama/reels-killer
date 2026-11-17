@@ -16,16 +16,16 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /**
- * Installa un APK scelto dall'utente con l'installatore "a sessione" di Android.
- * Le app aggiornate così non ricevono di nuovo le "impostazioni con limitazioni",
- * che invece Android applica alle installazioni aperte dal browser o dal file manager.
- * Non serve il permesso INTERNET: l'APK lo scarica l'utente.
+ * Installs an APK picked by the user with Android's session-based installer.
+ * Apps updated this way do not get the "restricted settings" again, which Android
+ * applies instead to installs opened from the browser or the file manager.
+ * No INTERNET permission is needed: the user downloads the APK.
  */
 object UpdateInstaller {
 
     fun canInstall(context: Context): Boolean = context.packageManager.canRequestPackageInstalls()
 
-    /** Apre la schermata di sistema per consentire a questa app di installare aggiornamenti. */
+    /** Opens the system screen that lets this app install updates. */
     fun openInstallPermission(context: Context) {
         val i = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES, Uri.parse("package:${context.packageName}"))
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -36,7 +36,7 @@ object UpdateInstaller {
         }
     }
 
-    /** Copia l'APK in una sessione e la conferma; l'esito arriva a [InstallResultReceiver]. */
+    /** Copies the APK into an install session and commits it; the result arrives at [InstallResultReceiver]. */
     suspend fun install(context: Context, apk: Uri) = withContext(Dispatchers.IO) {
         val installer = context.packageManager.packageInstaller
         val params = PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL).apply {
@@ -48,7 +48,7 @@ object UpdateInstaller {
         val sessionId = installer.createSession(params)
         installer.openSession(sessionId).use { session ->
             context.contentResolver.openInputStream(apk).use { input ->
-                requireNotNull(input) { "File non leggibile" }
+                requireNotNull(input) { "File not readable" }
                 session.openWrite("update.apk", 0, -1).use { out ->
                     input.copyTo(out, 64 * 1024)
                     session.fsync(out)
@@ -63,7 +63,7 @@ object UpdateInstaller {
     }
 }
 
-/** Riceve l'esito dell'installazione e, se serve, mostra la conferma di sistema. */
+/** Receives the install result and, if needed, shows the system confirmation. */
 class InstallResultReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val status = intent.getIntExtra(PackageInstaller.EXTRA_STATUS, PackageInstaller.STATUS_FAILURE)
@@ -76,13 +76,13 @@ class InstallResultReceiver : BroadcastReceiver() {
                     try {
                         context.startActivity(confirm)
                     } catch (e: Exception) {
-                        context.container.diagnostics.error("Conferma installazione", e)
+                        context.container.diagnostics.error("Install confirmation", e)
                     }
                 }
             }
-            PackageInstaller.STATUS_SUCCESS -> Unit // l'app viene riavviata dal sistema
+            PackageInstaller.STATUS_SUCCESS -> Unit // the system restarts the app
             else -> {
-                context.container.diagnostics.error("Installazione aggiornamento: stato $status ${message.orEmpty()}")
+                context.container.diagnostics.error("Update install: status $status ${message.orEmpty()}")
                 Toast.makeText(
                     context,
                     context.getString(R.string.update_failed, message ?: status.toString()),

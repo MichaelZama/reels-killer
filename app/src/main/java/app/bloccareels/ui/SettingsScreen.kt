@@ -29,8 +29,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -44,18 +42,19 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import app.bloccareels.AppContainer
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.bloccareels.R
 import app.bloccareels.data.AppIds
 import app.bloccareels.data.Illustration
+import app.bloccareels.data.Locales
 import app.bloccareels.data.Settings
 import app.bloccareels.overlay.OverlayBinder
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 
-/** Schermata impostazioni unica e scorrevole. */
+/** The single, scrolling settings screen. */
 @Composable
 fun SettingsScreen(
-    c: AppContainer,
+    model: UiModel,
     settings: Settings,
     serviceOn: Boolean,
     batteryOk: Boolean,
@@ -63,10 +62,6 @@ fun SettingsScreen(
     onPreview: () -> Unit,
 ) {
     val context = LocalContext.current
-    val repo = c.settings
-    fun save(block: suspend () -> Unit) {
-        c.appScope.launch { block() }
-    }
 
     Column(
         Modifier
@@ -77,7 +72,7 @@ fun SettingsScreen(
     ) {
         Text(
             stringResource(R.string.settings_title),
-            color = BrColors.Testo,
+            color = AppColors.TextPrimary,
             fontSize = 24.sp,
             fontWeight = FontWeight.Medium,
             modifier = Modifier
@@ -85,19 +80,19 @@ fun SettingsScreen(
                 .semantics { heading() },
         )
 
-        // ------------------------------------------------------------- Stato
+        // ------------------------------------------------------------ Status
         SectionCard(stringResource(R.string.section_status)) {
             SwitchRow(
                 title = stringResource(R.string.master_switch),
                 note = stringResource(R.string.interruptions_today, settings.blocksToday),
                 checked = settings.masterEnabled,
-                onCheckedChange = { v -> save { repo.setMasterEnabled(v) } },
+                onCheckedChange = { v -> model.setMasterEnabled(v) },
             )
-            val diag by c.diagnostics.status.collectAsStateWithLifecycle()
-            // Il servizio può collegarsi un attimo dopo l'apertura dell'app: breve tolleranza.
+            val diag by model.diagnostics.status.collectAsStateWithLifecycle()
+            // The service can connect a moment after the app opens: allow a short grace period.
             var graceOver by remember { mutableStateOf(false) }
             LaunchedEffect(Unit) {
-                delay(2000)
+                delay(SERVICE_CONNECT_GRACE_MS)
                 graceOver = true
             }
             when {
@@ -114,14 +109,17 @@ fun SettingsScreen(
                         onFix = { SystemStatus.openAccessibilitySettings(context) },
                     )
                     if (SystemStatus.isXiaomi()) {
-                        Text(stringResource(R.string.xiaomi_autostart_note), color = BrColors.TestoSecondario, fontSize = 13.sp)
+                        Text(stringResource(R.string.xiaomi_autostart_note), color = AppColors.TextSecondary, fontSize = 13.sp)
                         Button(
                             onClick = { SystemStatus.openAutostartSettings(context) },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .heightIn(min = 48.dp),
                             shape = CircleShape,
-                            colors = ButtonDefaults.buttonColors(containerColor = BrColors.Sfondo, contentColor = BrColors.Testo),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = AppColors.Background,
+                                contentColor = AppColors.TextPrimary,
+                            ),
                         ) { Text(stringResource(R.string.xiaomi_autostart_button)) }
                     }
                 }
@@ -143,9 +141,9 @@ fun SettingsScreen(
             }
         }
 
-        // ---------------------------------------------------- App monitorate
+        // ---------------------------------------------------- Monitored apps
         SectionCard(stringResource(R.string.section_apps)) {
-            val installed = remember { AppIds.ALL.associateWith { c.isAppInstalled(it) } }
+            val installed = remember { AppIds.ALL.associateWith { model.isAppInstalled(it) } }
             AppIds.ALL.forEach { id ->
                 val isInstalled = installed[id] == true
                 val note = when {
@@ -158,44 +156,44 @@ fun SettingsScreen(
                     note = note,
                     checked = isInstalled && settings.isAppEnabled(id),
                     enabled = isInstalled,
-                    onCheckedChange = { v -> save { repo.setAppEnabled(id, v) } },
+                    onCheckedChange = { v -> model.setAppEnabled(id, v) },
                 )
             }
         }
 
-        // ------------------------------------------------------ Comportamento
+        // --------------------------------------------------------- Behaviour
         SectionCard(stringResource(R.string.section_behavior)) {
-            Text(stringResource(R.string.truce_label), color = BrColors.Testo, fontSize = 16.sp)
+            Text(stringResource(R.string.truce_label), color = AppColors.TextPrimary, fontSize = 16.sp)
             ChoiceRow(
                 options = Settings.TRUCE_CHOICES,
                 selected = settings.truceSeconds,
                 label = { stringResource(R.string.seconds_short, it) },
                 description = { stringResource(R.string.seconds_choice_description, it) },
-                onSelect = { v -> save { repo.setTruceSeconds(v) } },
+                onSelect = { v -> model.setTruceSeconds(v) },
             )
             Spacer(Modifier.height(4.dp))
-            Text(stringResource(R.string.delay_label), color = BrColors.Testo, fontSize = 16.sp)
+            Text(stringResource(R.string.delay_label), color = AppColors.TextPrimary, fontSize = 16.sp)
             ChoiceRow(
                 options = Settings.DELAY_CHOICES,
                 selected = settings.continueDelaySeconds,
                 label = { stringResource(R.string.seconds_short, it) },
                 description = { stringResource(R.string.seconds_choice_description, it) },
-                onSelect = { v -> save { repo.setContinueDelaySeconds(v) } },
+                onSelect = { v -> model.setContinueDelaySeconds(v) },
             )
             SwitchRow(
                 title = stringResource(R.string.escalating_label),
                 note = stringResource(R.string.escalating_note),
                 checked = settings.escalatingDelay,
-                onCheckedChange = { v -> save { repo.setEscalatingDelay(v) } },
+                onCheckedChange = { v -> model.setEscalatingDelay(v) },
             )
             SwitchRow(
                 title = stringResource(R.string.mute_label),
                 checked = settings.muteAudio,
-                onCheckedChange = { v -> save { repo.setMuteAudio(v) } },
+                onCheckedChange = { v -> model.setMuteAudio(v) },
             )
         }
 
-        // ------------------------------------------------ Schermata di blocco
+        // ------------------------------------------------------ Block screen
         SectionCard(stringResource(R.string.section_block_screen)) {
             Row(
                 Modifier
@@ -204,57 +202,64 @@ fun SettingsScreen(
                     .clickable(role = Role.Button, onClick = onOpenMessages),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(stringResource(R.string.messages_label), color = BrColors.Testo, fontSize = 16.sp, modifier = Modifier.weight(1f))
-                Text(stringResource(R.string.messages_count, settings.messages.size), color = BrColors.TestoSecondario, fontSize = 14.sp)
-                Text("  ›", color = BrColors.TestoSecondario, fontSize = 18.sp)
+                Text(
+                    stringResource(R.string.messages_label),
+                    color = AppColors.TextPrimary,
+                    fontSize = 16.sp,
+                    modifier = Modifier.weight(1f),
+                )
+                Text(stringResource(R.string.messages_count, settings.messages.size), color = AppColors.TextSecondary, fontSize = 14.sp)
+                Text("  ›", color = AppColors.TextSecondary, fontSize = 18.sp)
             }
-            Text(stringResource(R.string.illustration_label), color = BrColors.Testo, fontSize = 16.sp)
+            Text(stringResource(R.string.illustration_label), color = AppColors.TextPrimary, fontSize = 16.sp)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                Illustration.entries.filter { it != Illustration.PERSONALIZZATO }.forEach { ill ->
+                Illustration.entries.filter { it != Illustration.CUSTOM }.forEach { ill ->
                     IllustrationThumb(
                         illustration = ill,
                         selected = settings.illustration == ill,
-                        onSelect = { save { repo.setIllustration(ill) } },
+                        onSelect = { model.setIllustration(ill) },
                     )
                 }
-                CustomMediaThumb(c = c, settings = settings)
+                CustomMediaThumb(model = model, settings = settings)
             }
-            CustomMediaActions(c = c, settings = settings)
+            CustomMediaActions(model = model, settings = settings)
             Button(
                 onClick = onPreview,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp),
                 shape = CircleShape,
-                colors = ButtonDefaults.buttonColors(containerColor = BrColors.Sfondo, contentColor = BrColors.Testo),
+                colors = ButtonDefaults.buttonColors(containerColor = AppColors.Background, contentColor = AppColors.TextPrimary),
             ) { Text(stringResource(R.string.preview_button), fontSize = 15.sp) }
         }
 
-        // --------------------------------------------------------------- Lingua
+        // ------------------------------------------------------------- Language
         SectionCard(stringResource(R.string.section_language)) {
             ChoiceRow(
-                options = app.bloccareels.data.Locales.SUPPORTED,
+                options = Locales.SUPPORTED,
                 selected = settings.language,
                 label = { languageLabel(it) },
                 description = { languageLabel(it) },
                 onSelect = { tag ->
-                    app.bloccareels.data.Locales.applyToUi(tag)
-                    save { repo.setLanguage(tag) }
+                    Locales.applyToUi(tag)
+                    model.setLanguage(tag)
                 },
             )
         }
 
-        // -------------------------------------------------------- Aggiornamento
-        UpdateSection(c = c)
+        // --------------------------------------------------------------- Update
+        UpdateSection(model = model)
 
-        // ---------------------------------------------------------- Diagnostica
-        DiagnosticsSection(c = c, settings = settings)
+        // ---------------------------------------------------------- Diagnostics
+        DiagnosticsSection(model = model)
 
         Spacer(Modifier.height(24.dp))
     }
 }
 
 internal val THUMB_SIZE = 64.dp
+
+private const val SERVICE_CONNECT_GRACE_MS = 2000L
 
 @Composable
 private fun languageLabel(tag: String): String = stringResource(
@@ -269,7 +274,8 @@ fun appLabel(id: String): Int = when (id) {
     AppIds.INSTAGRAM -> R.string.app_instagram
     AppIds.YOUTUBE -> R.string.app_youtube
     AppIds.TIKTOK -> R.string.app_tiktok
-    else -> R.string.app_facebook
+    AppIds.FACEBOOK -> R.string.app_facebook
+    else -> error("Unknown app id: $id")
 }
 
 private enum class StatusKind { OK, WARN, PAUSE }
@@ -295,8 +301,8 @@ private fun StatusRow(kind: StatusKind, text: String, note: String? = null, onFi
         )
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
-            Text(text, color = BrColors.Testo, fontSize = 15.sp)
-            if (note != null) Text(note, color = BrColors.TestoSecondario, fontSize = 13.sp)
+            Text(text, color = AppColors.TextPrimary, fontSize = 15.sp)
+            if (note != null) Text(note, color = AppColors.TextSecondary, fontSize = 13.sp)
         }
         if (onFix != null) {
             Spacer(Modifier.width(8.dp))
@@ -304,7 +310,7 @@ private fun StatusRow(kind: StatusKind, text: String, note: String? = null, onFi
                 onClick = onFix,
                 modifier = Modifier.heightIn(min = 48.dp),
                 shape = CircleShape,
-                colors = ButtonDefaults.buttonColors(containerColor = BrColors.Avviso, contentColor = BrColors.SuAccento),
+                colors = ButtonDefaults.buttonColors(containerColor = AppColors.Warning, contentColor = AppColors.OnAccent),
             ) { Text(stringResource(R.string.fix), fontWeight = FontWeight.Bold) }
         }
     }
@@ -314,10 +320,10 @@ private fun StatusRow(kind: StatusKind, text: String, note: String? = null, onFi
 private fun IllustrationThumb(illustration: Illustration, selected: Boolean, onSelect: () -> Unit) {
     val name = stringResource(
         when (illustration) {
-            Illustration.TRAMONTO -> R.string.ill_tramonto
-            Illustration.TAZZA -> R.string.ill_tazza
-            Illustration.FOGLIA -> R.string.ill_foglia
-            Illustration.PERSONALIZZATO -> R.string.ill_custom
+            Illustration.SUNSET -> R.string.ill_sunset
+            Illustration.CUP -> R.string.ill_cup
+            Illustration.LEAF -> R.string.ill_leaf
+            Illustration.CUSTOM -> R.string.ill_custom
         },
     )
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -325,8 +331,8 @@ private fun IllustrationThumb(illustration: Illustration, selected: Boolean, onS
             modifier = Modifier
                 .size(THUMB_SIZE)
                 .clip(CircleShape)
-                .background(BrColors.Sfondo)
-                .border(if (selected) 3.dp else 1.dp, if (selected) BrColors.Accento else BrColors.Bordo, CircleShape)
+                .background(AppColors.Background)
+                .border(if (selected) 3.dp else 1.dp, if (selected) AppColors.Accent else AppColors.Border, CircleShape)
                 .selectable(selected = selected, role = Role.RadioButton, onClick = onSelect)
                 .semantics { contentDescription = name },
             contentAlignment = Alignment.Center,
@@ -338,6 +344,6 @@ private fun IllustrationThumb(illustration: Illustration, selected: Boolean, onS
             )
         }
         Spacer(Modifier.height(6.dp))
-        Text(name, color = if (selected) BrColors.Testo else BrColors.TestoSecondario, fontSize = 13.sp)
+        Text(name, color = if (selected) AppColors.TextPrimary else AppColors.TextSecondary, fontSize = 13.sp)
     }
 }

@@ -24,18 +24,17 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LifecycleResumeEffect
-import app.bloccareels.AppContainer
 import app.bloccareels.R
 import app.bloccareels.update.UpdateInstaller
 import kotlinx.coroutines.launch
 
-/** Pagina delle release: da qui l'utente scarica le nuove versioni. */
+/** Releases page: the user downloads new versions from here. */
 const val REPO_URL = "https://github.com/MichaelZama/reels-killer"
 const val RELEASES_URL = "$REPO_URL/releases/latest"
 
-/** Installazione degli aggiornamenti da un APK scaricato, senza "impostazioni con limitazioni". */
+/** Installs updates from a downloaded APK, without "restricted settings". */
 @Composable
-fun UpdateSection(c: AppContainer) {
+fun UpdateSection(model: UiModel) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var canInstall by remember { mutableStateOf(UpdateInstaller.canInstall(context)) }
@@ -60,7 +59,7 @@ fun UpdateSection(c: AppContainer) {
             try {
                 UpdateInstaller.install(context, uri)
             } catch (e: Exception) {
-                c.diagnostics.error("Installazione aggiornamento", e)
+                model.diagnostics.error("Update install", e)
                 Toast.makeText(context, failed + (e.message ?: ""), Toast.LENGTH_LONG).show()
             } finally {
                 busy = false
@@ -69,19 +68,19 @@ fun UpdateSection(c: AppContainer) {
     }
 
     SectionCard(stringResource(R.string.section_update)) {
-        Text(stringResource(R.string.update_version, version), color = BrColors.Testo, fontSize = 15.sp)
-        Text(stringResource(R.string.update_where), color = BrColors.TestoSecondario, fontSize = 13.sp)
+        Text(stringResource(R.string.update_version, version), color = AppColors.TextPrimary, fontSize = 15.sp)
+        Text(stringResource(R.string.update_where), color = AppColors.TextSecondary, fontSize = 13.sp)
         TextButton(
             onClick = {
                 SystemStatus.start(context, Intent(Intent.ACTION_VIEW, Uri.parse(RELEASES_URL)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
             },
             modifier = Modifier.heightIn(min = 48.dp),
         ) {
-            Text(stringResource(R.string.update_open_releases), color = BrColors.Accento, fontSize = 15.sp)
+            Text(stringResource(R.string.update_open_releases), color = AppColors.Accent, fontSize = 15.sp)
         }
         Text(
             stringResource(if (canInstall) R.string.update_note else R.string.update_permission_note),
-            color = BrColors.TestoSecondario,
+            color = AppColors.TextSecondary,
             fontSize = 13.sp,
         )
         Button(
@@ -97,7 +96,7 @@ fun UpdateSection(c: AppContainer) {
                 .fillMaxWidth()
                 .heightIn(min = 48.dp),
             shape = CircleShape,
-            colors = ButtonDefaults.buttonColors(containerColor = BrColors.Sfondo, contentColor = BrColors.Testo),
+            colors = ButtonDefaults.buttonColors(containerColor = AppColors.Background, contentColor = AppColors.TextPrimary),
         ) {
             Text(
                 stringResource(

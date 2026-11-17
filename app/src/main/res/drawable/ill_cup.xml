@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Tazza con vapore. Disegno a tratto da 3dp su 144dp. -->
+<!-- Steaming cup. Line drawing, 3dp stroke on 144dp. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="144dp"
     android:height="144dp"

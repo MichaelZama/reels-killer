@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="sfondo">#12181F</color>
-    <color name="superficie">#1C2530</color>
-    <color name="bordo">#2A3541</color>
-    <color name="bordo_forte">#5E6C7A</color>
-    <color name="testo">#E8ECEF</color>
-    <color name="testo_secondario">#9AA7B4</color>
-    <color name="accento">#4FB0A5</color>
-    <color name="su_accento">#0E1418</color>
-    <color name="avviso">#E0A84F</color>
+    <color name="background">#12181F</color>
+    <color name="surface">#1C2530</color>
+    <color name="border">#2A3541</color>
+    <color name="border_strong">#5E6C7A</color>
+    <color name="text_primary">#E8ECEF</color>
+    <color name="text_secondary">#9AA7B4</color>
+    <color name="accent">#4FB0A5</color>
+    <color name="on_accent">#0E1418</color>
+    <color name="warning">#E0A84F</color>
 </resources>

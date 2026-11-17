@@ -9,7 +9,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 
-/** Copia nella cartella privata dell'app l'immagine, la GIF o il video scelti dall'utente. */
+/** Copies the image, GIF or video picked by the user into the app's private folder. */
 object MediaImporter {
 
     sealed interface Result {
@@ -76,7 +76,7 @@ object MediaImporter {
         }
     }
 
-    /** Cancella i file non piu' usati da nessun livello ne' dal media generale. */
+    /** Deletes the files that neither a level nor the general media use any more. */
     fun cleanup(context: Context, keep: Set<String>) {
         mediaDir(context).listFiles()?.filter { it.path !in keep }?.forEach { it.delete() }
     }
@@ -93,7 +93,7 @@ object MediaImporter {
         }
     }
 
-    /** Miniatura piccola per le impostazioni. */
+    /** Small thumbnail for the settings. */
     suspend fun thumbnail(media: CustomMedia, sizePx: Int): Bitmap? = withContext(Dispatchers.IO) {
         try {
             if (!File(media.path).exists()) return@withContext null
@@ -122,6 +122,9 @@ object MediaImporter {
 
     private fun scale(b: Bitmap, size: Int): Bitmap {
         val f = size.toFloat() / minOf(b.width, b.height)
-        return if (f >= 1f) b else Bitmap.createScaledBitmap(b, (b.width * f).toInt().coerceAtLeast(1), (b.height * f).toInt().coerceAtLeast(1), true)
+        if (f >= 1f) return b
+        val w = (b.width * f).toInt().coerceAtLeast(1)
+        val h = (b.height * f).toInt().coerceAtLeast(1)
+        return Bitmap.createScaledBitmap(b, w, h, true)
     }
 }

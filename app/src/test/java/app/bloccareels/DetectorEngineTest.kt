@@ -2,6 +2,7 @@ package app.bloccareels
 
 import app.bloccareels.detect.Detection
 import app.bloccareels.detect.DetectorEngine
+import app.bloccareels.detect.ExitAction
 import app.bloccareels.detect.RulesFile
 import app.bloccareels.detect.RulesLoader
 import app.bloccareels.detect.UiNode
@@ -27,7 +28,7 @@ class FakeSnapshot(
     override val screenHeightPx: Int = 2400,
     private val fp: Int? = null,
 ) : UiSnapshot {
-    /** Quante volte è stato visitato l'albero intero. */
+    /** How many times the whole tree was walked. */
     var walks = 0
         private set
 
@@ -51,49 +52,50 @@ class DetectorEngineTest {
     }
 
     @Test
-    fun `il file delle regole incluso si legge`() {
+    fun `the bundled rules file loads`() {
         assertEquals(4, rules.apps.size)
         assertTrue(rules.version >= 1)
+        assertEquals(ExitAction.HOME, rules.apps.first { it.id == "tiktok" }.exitAction)
     }
 
     @Test
-    fun `package non monitorato restituisce None`() {
+    fun `an unmonitored package returns None`() {
         val snap = FakeSnapshot("com.whatsapp", listOf(FakeNode(viewId = "clips_viewer_view_pager")))
         assertEquals(Detection.None, engine.detect(snap, all))
     }
 
     @Test
-    fun `regola always restituisce Feed`() {
+    fun `an always rule returns Feed`() {
         val snap = FakeSnapshot("com.zhiliaoapp.musically", emptyList())
-        assertEquals(Detection.Feed("tiktok", "tutta_la_app"), engine.detect(snap, all))
+        assertEquals(Detection.Feed("tiktok", "whole_app"), engine.detect(snap, all))
         val trill = FakeSnapshot("com.ss.android.ugc.trill", emptyList())
-        assertEquals(Detection.Feed("tiktok", "tutta_la_app"), engine.detect(trill, all))
+        assertEquals(Detection.Feed("tiktok", "whole_app"), engine.detect(trill, all))
     }
 
     @Test
-    fun `contenitore presente e scheda selezionata restituisce Feed`() {
+    fun `container present and tab selected returns Feed`() {
         val snap = FakeSnapshot(
             "com.instagram.android",
             listOf(FakeNode(viewId = "clips_viewer_view_pager"), FakeNode(viewId = "clips_tab", isSelected = true)),
         )
-        assertEquals(Detection.Feed("instagram", "scheda_reels"), engine.detect(snap, all))
+        assertEquals(Detection.Feed("instagram", "reels_tab"), engine.detect(snap, all))
     }
 
     @Test
-    fun `contenitore presente e scheda non selezionata restituisce Single con pagerViewId`() {
+    fun `container present and tab not selected returns Single with pagerViewId`() {
         val snap = FakeSnapshot(
             "com.instagram.android",
             listOf(FakeNode(viewId = "clips_viewer_view_pager"), FakeNode(viewId = "clips_tab", isSelected = false)),
             fp = 42,
         )
         assertEquals(
-            Detection.Single("instagram", "reel_singolo", "clips_viewer_view_pager", fingerprint = 42),
+            Detection.Single("instagram", "single_reel", "clips_viewer_view_pager", fingerprint = 42),
             engine.detect(snap, all),
         )
     }
 
     @Test
-    fun `contenitore presente ma non visibile restituisce None`() {
+    fun `container present but not visible returns None`() {
         val snap = FakeSnapshot(
             "com.instagram.android",
             listOf(FakeNode(viewId = "clips_viewer_view_pager", isVisible = false), FakeNode(viewId = "clips_tab", isSelected = true)),
@@ -102,30 +104,30 @@ class DetectorEngineTest {
     }
 
     @Test
-    fun `vince la prima regola che corrisponde`() {
+    fun `the first matching rule wins`() {
         val json = """
             {"version":1,"apps":[{"id":"instagram","packages":["p"],"rules":[
-              {"name":"prima","mode":"single","allOf":[{"viewId":"a"}]},
-              {"name":"seconda","mode":"feed","allOf":[{"viewId":"a"}]}
+              {"name":"first","mode":"single","allOf":[{"viewId":"a"}]},
+              {"name":"second","mode":"feed","allOf":[{"viewId":"a"}]}
             ]}]}
         """.trimIndent()
         val e = DetectorEngine(RulesLoader.parse(json))
         val d = e.detect(FakeSnapshot("p", listOf(FakeNode(viewId = "a"))), setOf("instagram"))
-        assertEquals("prima", (d as Detection.Single).rule)
+        assertEquals("first", (d as Detection.Single).rule)
     }
 
     @Test
-    fun `descAnyOf ignora maiuscole e minuscole`() {
+    fun `descAnyOf ignores case`() {
         val snap = FakeSnapshot(
             "com.google.android.youtube",
             listOf(FakeNode(viewId = "reel_recycler"), FakeNode(contentDescription = "SHORTS", isSelected = true)),
         )
-        assertEquals(Detection.Feed("youtube", "scheda_shorts"), engine.detect(snap, all))
+        assertEquals(Detection.Feed("youtube", "shorts_tab"), engine.detect(snap, all))
     }
 
     @Test
-    fun `allOf e anyOf devono essere entrambi soddisfatti`() {
-        // Scheda Shorts selezionata ma nessun player: niente.
+    fun `allOf and anyOf must both match`() {
+        // Shorts tab selected but no player: nothing.
         val snap = FakeSnapshot(
             "com.google.android.youtube",
             listOf(FakeNode(contentDescription = "Shorts", isSelected = true)),
@@ -134,36 +136,47 @@ class DetectorEngineTest {
     }
 
     @Test
-    fun `minHeightFraction distingue il player a tutto schermo`() {
+    fun `minHeightFraction tells the full-screen player apart`() {
         val tab = FakeNode(contentDescription = "Reels", isSelected = true)
-        val piccolo = FakeSnapshot("com.facebook.katana", listOf(tab, FakeNode(isScrollable = true, heightPx = 600)))
-        val grande = FakeSnapshot("com.facebook.katana", listOf(tab, FakeNode(isScrollable = true, heightPx = 2300)))
-        assertEquals(Detection.None, engine.detect(piccolo, all))
-        assertEquals(Detection.Feed("facebook", "scheda_reels"), engine.detect(grande, all))
+        val small = FakeSnapshot("com.facebook.katana", listOf(tab, FakeNode(isScrollable = true, heightPx = 600)))
+        val large = FakeSnapshot("com.facebook.katana", listOf(tab, FakeNode(isScrollable = true, heightPx = 2300)))
+        assertEquals(Detection.None, engine.detect(small, all))
+        assertEquals(Detection.Feed("facebook", "reels_tab"), engine.detect(large, all))
     }
 
     @Test
-    fun `app disattivata nelle impostazioni restituisce None`() {
+    fun `an app disabled in the settings returns None`() {
         val snap = FakeSnapshot("com.zhiliaoapp.musically", emptyList())
         assertEquals(Detection.None, engine.detect(snap, all - "tiktok"))
         assertEquals(Detection.None, engine.detect(snap, emptySet()))
     }
 
     @Test
-    fun `file delle regole malformato non carica regole e registra un errore`() {
+    fun `a malformed rules file loads no rules and reports an error`() {
         val errors = mutableListOf<String>()
-        val parsed = RulesLoader.parse("{ questo non è json") { errors += it }
+        val parsed = RulesLoader.parse("{ this is not json") { errors += it }
         assertEquals(RulesFile.EMPTY, parsed)
         assertEquals(1, errors.size)
         val snap = FakeSnapshot("com.zhiliaoapp.musically", emptyList())
         assertEquals(Detection.None, DetectorEngine(parsed).detect(snap, all))
     }
 
-    // ------------------------------------- ordine di valutazione: prima le condizioni con viewId
+    @Test
+    fun `an unknown mode or exitAction makes the file invalid`() {
+        val badMode = """{"version":1,"apps":[{"id":"x","packages":["p"],"rules":[{"name":"r","mode":"feeed","always":true}]}]}"""
+        val badExit = """{"version":1,"apps":[{"id":"x","packages":["p"],"exitAction":"sideways","rules":[]}]}"""
+        for (json in listOf(badMode, badExit)) {
+            val errors = mutableListOf<String>()
+            assertEquals(RulesFile.EMPTY, RulesLoader.parse(json) { errors += it })
+            assertEquals(1, errors.size)
+        }
+    }
+
+    // ------------------------------------------- evaluation order: conditions with a viewId first
 
     @Test
-    fun `senza il player degli Shorts l'albero non viene visitato`() {
-        // Home di YouTube: la scheda Shorts non è selezionata e il player non c'è.
+    fun `without the Shorts player the tree is not walked`() {
+        // YouTube home: the Shorts tab is not selected and there is no player.
         val snap = FakeSnapshot(
             "com.google.android.youtube",
             listOf(FakeNode(contentDescription = "Home", isSelected = true), FakeNode(contentDescription = "Shorts")),
@@ -173,17 +186,17 @@ class DetectorEngineTest {
     }
 
     @Test
-    fun `con il player degli Shorts l'albero si visita una volta sola`() {
+    fun `with the Shorts player the tree is walked only once`() {
         val snap = FakeSnapshot(
             "com.google.android.youtube",
             listOf(FakeNode(viewId = "reel_recycler"), FakeNode(contentDescription = "Shorts", isSelected = true)),
         )
-        assertEquals(Detection.Feed("youtube", "scheda_shorts"), engine.detect(snap, all))
+        assertEquals(Detection.Feed("youtube", "shorts_tab"), engine.detect(snap, all))
         assertEquals(1, snap.walks)
     }
 
     @Test
-    fun `una condizione allOf con viewId che fallisce evita la visita anche se anyOf e lenta`() {
+    fun `a failing allOf condition with a viewId avoids the walk even if anyOf is slow`() {
         val json = """
             {"version":1,"apps":[{"id":"instagram","packages":["p"],"rules":[
               {"name":"r","mode":"feed","allOf":[{"viewId":"a"}],"anyOf":[{"descAnyOf":["X"]}]}
@@ -191,14 +204,14 @@ class DetectorEngineTest {
         """.trimIndent()
         val e = DetectorEngine(RulesLoader.parse(json))
 
-        val senzaA = FakeSnapshot("p", listOf(FakeNode(contentDescription = "X")))
-        assertEquals(Detection.None, e.detect(senzaA, setOf("instagram")))
-        assertEquals(0, senzaA.walks)
+        val withoutA = FakeSnapshot("p", listOf(FakeNode(contentDescription = "X")))
+        assertEquals(Detection.None, e.detect(withoutA, setOf("instagram")))
+        assertEquals(0, withoutA.walks)
 
-        val conA = FakeSnapshot("p", listOf(FakeNode(viewId = "a"), FakeNode(contentDescription = "X")))
-        assertEquals(Detection.Feed("instagram", "r"), e.detect(conA, setOf("instagram")))
+        val withA = FakeSnapshot("p", listOf(FakeNode(viewId = "a"), FakeNode(contentDescription = "X")))
+        assertEquals(Detection.Feed("instagram", "r"), e.detect(withA, setOf("instagram")))
 
-        val conASenzaX = FakeSnapshot("p", listOf(FakeNode(viewId = "a"), FakeNode(contentDescription = "Y")))
-        assertEquals(Detection.None, e.detect(conASenzaX, setOf("instagram")))
+        val withAWithoutX = FakeSnapshot("p", listOf(FakeNode(viewId = "a"), FakeNode(contentDescription = "Y")))
+        assertEquals(Detection.None, e.detect(withAWithoutX, setOf("instagram")))
     }
 }

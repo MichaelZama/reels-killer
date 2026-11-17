@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Servizio di accessibilità -->
+    <!-- Accessibility service -->
     <string name="service_summary">Interrompe Reels, Shorts e TikTok con una schermata di pausa.</string>
     <string name="service_description">Reels Killer legge la struttura della schermata per accorgersi quando sei nei video brevi (Reels di Instagram, Shorts di YouTube, TikTok, Reels di Facebook) e mostra una schermata di pausa. Non legge i tuoi messaggi, non salva nulla e non ha accesso a internet.</string>
 
-    <!-- Messaggi di default della schermata di blocco -->
+    <!-- Default block screen messages -->
     <string-array name="default_messages">
         <item>Era quello che volevi fare?</item>
         <item>Ancora qui. Ti serve davvero?</item>
@@ -14,13 +14,13 @@
         <item>C\'è qualcosa di meglio da fare adesso?</item>
     </string-array>
 
-    <!-- Sottotitoli della schermata di blocco, per app -->
+    <!-- Block screen subtitles, per app -->
     <string name="subtitle_instagram">Sei nei Reels di Instagram.</string>
     <string name="subtitle_youtube">Sei negli Shorts di YouTube.</string>
     <string name="subtitle_tiktok">Sei su TikTok.</string>
     <string name="subtitle_facebook">Sei nei Reels di Facebook.</string>
 
-    <!-- Schermata di blocco -->
+    <!-- Block screen -->
     <string name="overlay_exit">Esci</string>
     <string name="overlay_exit_description">Esci dai video brevi</string>
     <string name="overlay_continue">Continua</string>
@@ -30,7 +30,7 @@
     <string name="overlay_counter">%1$dª volta oggi</string>
     <string name="overlay_counter_escalating">%1$dª volta oggi · l\'attesa cresce a ogni Continua</string>
 
-    <!-- Primo avvio -->
+    <!-- Onboarding -->
     <string name="onb_step">Passaggio %1$d di %2$d</string>
     <string name="onb1_title">Meno scroll, senza rinunce</string>
     <string name="onb1_text">Quando entri nei video brevi, una schermata ti chiede se vuoi davvero restare. Messaggi e video normali continuano a funzionare.</string>
@@ -48,7 +48,7 @@
     <string name="onb_skip">Più tardi</string>
     <string name="onb_finish">Inizia</string>
 
-    <!-- Impostazioni: stato -->
+    <!-- Settings: status -->
     <string name="section_status">Stato</string>
     <string name="master_switch">Blocco attivo</string>
     <string name="interruptions_today">%1$d interruzioni oggi</string>
@@ -62,12 +62,12 @@
     <string name="battery_warning">Il risparmio batteria può fermare il blocco</string>
     <string name="fix">Risolvi</string>
 
-    <!-- Impostazioni: app -->
+    <!-- Settings: apps -->
     <string name="section_apps">App monitorate</string>
     <string name="app_not_installed">non installata</string>
     <string name="app_experimental">sperimentale</string>
 
-    <!-- Impostazioni: comportamento -->
+    <!-- Settings: behaviour -->
     <string name="section_behavior">Comportamento</string>
     <string name="truce_label">Tregua dopo \"Continua\"</string>
     <string name="delay_label">Attesa prima di \"Continua\"</string>
@@ -76,14 +76,14 @@
     <string name="escalating_note">Si allunga a ogni Continua</string>
     <string name="mute_label">Abbassa l\'audio durante il blocco</string>
 
-    <!-- Impostazioni: schermata di blocco -->
+    <!-- Settings: block screen -->
     <string name="section_block_screen">Schermata di blocco</string>
     <string name="messages_label">Livelli e messaggi</string>
     <string name="messages_count">%1$d livelli</string>
     <string name="illustration_label">Disegno</string>
-    <string name="ill_tramonto">Tramonto</string>
-    <string name="ill_tazza">Tazza</string>
-    <string name="ill_foglia">Foglia</string>
+    <string name="ill_sunset">Tramonto</string>
+    <string name="ill_cup">Tazza</string>
+    <string name="ill_leaf">Foglia</string>
     <string name="ill_custom">Tuo</string>
     <string name="media_hint">Con \"Tuo\" puoi usare una tua immagine, una GIF o un video breve con audio (fino a %1$d secondi).</string>
     <string name="media_change">Cambia</string>
@@ -95,11 +95,11 @@
     <string name="preview_button">Anteprima blocco</string>
     <string name="preview_subtitle">Anteprima: così apparirà la schermata.</string>
 
-    <!-- Impostazioni: lingua -->
+    <!-- Settings: language -->
     <string name="section_language">Lingua</string>
     <string name="language_system">Sistema</string>
 
-    <!-- Livelli -->
+    <!-- Levels -->
     <string name="messages_title">Livelli</string>
     <string name="messages_hint">Livello 1 compare al primo blocco, livello 2 dopo il primo Continua, e così via; finiti i livelli resta l\'ultimo. Dopo 10 minuti senza blocchi si riparte dal livello 1. Tocca il riquadro per scegliere un\'immagine, una GIF o un video (fino a %1$d secondi): un livello senza media usa quello del livello precedente.</string>
     <string name="message_field">Frase %1$d</string>
@@ -113,7 +113,7 @@
     <string name="messages_reset">Ripristina le frasi iniziali</string>
     <string name="back">Indietro</string>
 
-    <!-- Diagnostica -->
+    <!-- Diagnostics -->
     <string name="section_diagnostics">Diagnostica</string>
     <string name="diag_expand">Mostra diagnostica</string>
     <string name="diag_collapse">Nascondi diagnostica</string>
@@ -132,20 +132,20 @@
     <string name="diag_no_tree">Nessun albero esportato. Usa prima \"Esporta albero\".</string>
     <string name="diag_versions">App %1$s · regole versione %2$d</string>
     <string name="diag_share_title">Condividi</string>
-    <string name="log_type_evento">evento</string>
-    <string name="log_type_rilevamento">rilevamento</string>
-    <string name="log_type_transizione">transizione</string>
-    <string name="log_type_errore">errore</string>
+    <string name="log_type_event">evento</string>
+    <string name="log_type_detection">rilevamento</string>
+    <string name="log_type_transition">transizione</string>
+    <string name="log_type_error">errore</string>
     <string name="diag_export_note">Per aggiornare le regole: tocca il pulsante, apri entro 10 secondi la schermata da analizzare (es. gli Shorts) e aspetta. Poi torna qui e usa \"Condividi ultimo albero\".</string>
     <string name="diag_export_button">Esporta albero tra %1$d s</string>
     <string name="diag_export_not_connected">Il servizio non è collegato: attivalo nelle impostazioni di accessibilità.</string>
 
-    <!-- Notifica di stato -->
+    <!-- Status notification -->
     <string name="status_channel_name">Stato del blocco</string>
     <string name="status_channel_description">Notifica silenziosa che indica che il blocco è attivo.</string>
     <string name="status_notification_title">Reels Killer attivo</string>
 
-    <!-- Aggiornamento -->
+    <!-- Update -->
     <string name="section_update">Aggiornamento</string>
     <string name="update_version">Versione installata: %1$s</string>
     <string name="update_where">Le nuove versioni sono pubblicate su GitHub, nella pagina del progetto Reels Killer.</string>

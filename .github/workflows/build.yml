@@ -22,10 +22,10 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v6
 
-      - name: Permessi gradlew
+      - name: Make gradlew executable
         run: chmod +x gradlew
 
-      - name: Test unitari
+      - name: Unit tests
         run: ./gradlew testDebugUnitTest --stacktrace
 
       - name: Keystore
@@ -34,18 +34,18 @@ jobs:
         run: |
           if [ -n "$KEYSTORE_BASE64" ]; then
             echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
-            echo "Keystore di release presente."
+            echo "Release keystore found."
           elif [[ "$GITHUB_REF" == refs/tags/v* ]]; then
-            # Una release firmata con la chiave di debug non si aggiornerebbe sopra quelle pubblicate.
-            echo "::error::Secret KEYSTORE_BASE64 assente: niente release senza la chiave di release."
+            # A release signed with the debug key would not update over the published ones.
+            echo "::error::Secret KEYSTORE_BASE64 missing: no release without the release key."
             exit 1
           else
-            echo "::warning::Secret KEYSTORE_BASE64 assente: l'APK sara' firmato con una chiave di debug e non si aggiornera' sopra versioni firmate diversamente."
+            echo "::warning::Secret KEYSTORE_BASE64 missing: the APK will be signed with a debug key and will not update over versions signed differently."
           fi
 
       - name: Build
         env:
-          # Sui tag Gradle si ferma se il keystore manca o e' vuoto, invece di firmare con la chiave di debug.
+          # On tags Gradle stops if the keystore is missing or empty, instead of signing with the debug key.
           REQUIRE_RELEASE_SIGNING: ${{ startsWith(github.ref, 'refs/tags/v') }}
           KEYSTORE_PATH: ${{ runner.temp }}/release.jks
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
@@ -53,7 +53,7 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: ./gradlew assembleRelease --stacktrace
 
-      - name: Rinomina APK
+      - name: Rename APK
         run: |
           mkdir -p out
           cp app/build/outputs/apk/release/*.apk "out/reels-killer-${GITHUB_REF_NAME//\//-}-${GITHUB_RUN_NUMBER}.apk"

@@ -2,6 +2,7 @@ package app.bloccareels.block
 
 import app.bloccareels.data.Settings
 import app.bloccareels.detect.Detection
+import app.bloccareels.detect.ExitAction
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -10,10 +11,30 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 /**
- * Macchina a stati del blocco. Kotlin puro: tutti gli effetti passano da [BlockActions],
- * i timer sono coroutine su [scope] e il tempo arriva da [clock], così nei test si usa il tempo virtuale.
+ * The blocking state machine. The states are described in [BlockState].
  *
- * Tutti i metodi vanno chiamati dallo stesso thread (nel servizio: il thread principale).
+ * | From      | Event                                                   | To        |
+ * |-----------|---------------------------------------------------------|-----------|
+ * | IDLE      | Feed detected                                           | BLOCKED   |
+ * | IDLE      | Single detected                                         | OBSERVING |
+ * | OBSERVING | swipe of the pager, fingerprint change, or Feed         | BLOCKED   |
+ * | OBSERVING | Single in another app                                   | OBSERVING |
+ * | OBSERVING | None                                                    | IDLE      |
+ * | BLOCKED   | Continue, once the wait is over                         | TRUCE     |
+ * | BLOCKED   | Exit                                                    | IDLE      |
+ * | BLOCKED   | None [NONE_STREAK_TO_LEAVE] times in a row              | IDLE      |
+ * | TRUCE     | truce over, Feed or Single still detected               | BLOCKED   |
+ * | TRUCE     | truce over, None                                        | IDLE      |
+ * | any       | screen off, service stopped, host app left, disabled    | IDLE      |
+ *
+ * Detections are ignored during TRUCE and for [EXIT_CHECK_MS] after Exit. A single None in
+ * BLOCKED schedules a recheck after [CONFIRM_NONE_MS], even if no events arrive.
+ * The wait before Continue comes from [DelayPolicy] and grows with consecutive Continue taps.
+ *
+ * Plain Kotlin: every side effect goes through [BlockActions], timers are coroutines on [scope]
+ * and time comes from [clock], so tests run on virtual time.
+ *
+ * All methods must be called from the same thread (in the service: the main thread).
  */
 class BlockController(
     private val actions: BlockActions,
@@ -25,10 +46,10 @@ class BlockController(
     private val onTransition: (from: BlockState, to: BlockState, reason: String) -> Unit = { _, _, _ -> },
     private val onError: (String, Throwable) -> Unit = { _, _ -> },
 ) {
-    var state: BlockState = BlockState.INATTIVO
+    var state: BlockState = BlockState.IDLE
         private set
 
-    /** App ospite a cui si riferisce lo stato corrente (null in INATTIVO). */
+    /** Host app the current state refers to (null in IDLE). */
     var currentAppId: String? = null
         private set
 
@@ -49,49 +70,47 @@ class BlockController(
     private var exitJob: Job? = null
     private var confirmJob: Job? = null
 
-    /** Contenitore da osservare per lo swipe, solo in OSSERVAZIONE. */
+    /** Container to watch for swipes; only in OBSERVING. */
     val observingPagerViewId: String?
-        get() = if (state == BlockState.OSSERVAZIONE) observedPager else null
-
-    val consecutiveContinueCount: Int get() = consecutiveContinues
+        get() = if (state == BlockState.OBSERVING) observedPager else null
 
     /**
-     * Niente in corso: nessuno stato attivo, nessuna schermata, audio intatto, nessun controllo dopo "Esci".
-     * In questo stato [onForegroundLeft] non fa nulla.
+     * Nothing in progress: no active state, no block screen, audio untouched, no check pending after "Exit".
+     * In this state [onForegroundLeft] does nothing.
      */
     val isIdle: Boolean
-        get() = state == BlockState.INATTIVO && !exiting && !overlayShown && !muted
+        get() = state == BlockState.IDLE && !exiting && !overlayShown && !muted
 
-    // ---------------------------------------------------------------- eventi
+    // ---------------------------------------------------------------- events
 
     fun onDetection(d: Detection) {
         if (exiting) return
         when (state) {
-            BlockState.INATTIVO -> when (d) {
-                is Detection.Feed -> block(d.appId, "rilevata sezione (${d.rule})")
+            BlockState.IDLE -> when (d) {
+                is Detection.Feed -> block(d.appId, "section detected (${d.rule})")
                 is Detection.Single -> observe(d)
                 Detection.None -> Unit
             }
 
-            BlockState.OSSERVAZIONE -> when (d) {
-                is Detection.Feed -> block(d.appId, "rilevata sezione (${d.rule})")
+            BlockState.OBSERVING -> when (d) {
+                is Detection.Feed -> block(d.appId, "section detected (${d.rule})")
                 is Detection.Single -> {
                     val stored = observedFingerprint
                     when {
                         d.appId != currentAppId -> observe(d)
                         stored == null -> observedFingerprint = d.fingerprint
-                        d.fingerprint != null && d.fingerprint != stored -> block(d.appId, "swipe (cambio di video)")
+                        d.fingerprint != null && d.fingerprint != stored -> block(d.appId, "swipe (video changed)")
                     }
                 }
-                Detection.None -> toIdle("video chiuso")
+                Detection.None -> toIdle("video closed")
             }
 
-            BlockState.BLOCCATO -> when (d) {
+            BlockState.BLOCKED -> when (d) {
                 Detection.None -> {
                     noneStreak++
-                    if (noneStreak >= 2) {
+                    if (noneStreak >= NONE_STREAK_TO_LEAVE) {
                         hideAll()
-                        toIdle("uscito dai video brevi")
+                        toIdle("left short videos")
                     } else {
                         scheduleConfirm()
                     }
@@ -102,24 +121,24 @@ class BlockController(
                 }
             }
 
-            // In TREGUA conta solo il controllo alla scadenza.
-            BlockState.TREGUA -> Unit
+            // In TRUCE only the check when it expires counts.
+            BlockState.TRUCE -> Unit
         }
     }
 
     fun onSwipe() {
-        if (state == BlockState.OSSERVAZIONE) {
-            currentAppId?.let { block(it, "swipe (scorrimento)") }
+        if (state == BlockState.OBSERVING) {
+            currentAppId?.let { block(it, "swipe (scroll)") }
         }
     }
 
     fun onContinueTapped() {
-        if (state != BlockState.BLOCCATO) return
+        if (state != BlockState.BLOCKED) return
         if (clock() < continueEnabledAt - CONTINUE_TOLERANCE_MS) return
         hideAll()
         consecutiveContinues++
-        safe("contatore continua") { counters.onContinue() }
-        setState(BlockState.TREGUA, "Continua")
+        safe("continue counter") { counters.onContinue() }
+        setState(BlockState.TRUCE, "Continue")
         val truceMs = settings.value.truceSeconds.coerceAtLeast(1) * 1000L
         truceJob = scope.launch {
             delay(truceMs)
@@ -128,46 +147,46 @@ class BlockController(
     }
 
     fun onExitTapped() {
-        if (state != BlockState.BLOCCATO) return
+        if (state != BlockState.BLOCKED) return
         val action = currentExit
         hideAll()
-        safe("contatore esci") { counters.onExit() }
-        safe("azione esci") { actions.performExit(action) }
+        safe("exit counter") { counters.onExit() }
+        safe("exit action") { actions.performExit(action) }
         exiting = true
-        toIdle("Esci")
+        toIdle("Exit")
         exitJob = scope.launch {
             delay(EXIT_CHECK_MS)
             exiting = false
             val d = evaluate()
             if (d != Detection.None) {
-                safe("azione home") { actions.performExit(ExitAction.HOME) }
+                safe("home action") { actions.performExit(ExitAction.HOME) }
             }
         }
     }
 
-    /** L'app in primo piano non è più un'app ospite monitorata. */
+    /** The foreground app is no longer a monitored host app. */
     fun onForegroundLeft() {
         if (isIdle) return
-        reset("uscito dall'app ospite")
+        reset("left the host app")
     }
 
-    fun onScreenOff() = reset("schermo spento")
+    fun onScreenOff() = reset("screen off")
 
-    fun onServiceStopped() = reset("servizio fermato")
+    fun onServiceStopped() = reset("service stopped")
 
-    /** Interruttore generale o dell'app spento. */
-    fun onDisabled() = reset("blocco disattivato")
+    /** The master switch or the app's switch was turned off. */
+    fun onDisabled() = reset("blocking disabled")
 
-    // --------------------------------------------------------------- interni
+    // ------------------------------------------------------------- internals
 
     private fun onTruceExpired() {
-        if (state != BlockState.TREGUA) return
+        if (state != BlockState.TRUCE) return
         truceJob = null
         when (val d = evaluate()) {
-            // Alla scadenza un video singolo vale come sezione: niente nuova osservazione.
-            is Detection.Feed -> block(d.appId, "fine tregua")
-            is Detection.Single -> block(d.appId, "fine tregua")
-            Detection.None -> toIdle("fine tregua, fuori dai video brevi")
+            // When the truce expires a single video counts as a section: no new observation.
+            is Detection.Feed -> block(d.appId, "truce over")
+            is Detection.Single -> block(d.appId, "truce over")
+            Detection.None -> toIdle("truce over, out of short videos")
         }
     }
 
@@ -175,25 +194,24 @@ class BlockController(
         currentAppId = d.appId
         observedPager = d.pagerViewId
         observedFingerprint = d.fingerprint
-        setState(BlockState.OSSERVAZIONE, "video singolo (${d.rule})")
+        setState(BlockState.OBSERVING, "single video (${d.rule})")
     }
 
     private fun block(appId: String, reason: String) {
         val s = settings.value
         val now = clock()
         val meta = appMeta(appId)
-        consecutiveContinues = DelayPolicy.consecutiviAggiornati(consecutiveContinues, lastVisibleAt, now)
-        val wait = DelayPolicy.attesa(s.continueDelaySeconds, s.escalatingDelay, consecutiveContinues)
+        consecutiveContinues = DelayPolicy.consecutiveForNewBlock(consecutiveContinues, lastVisibleAt, now)
+        val wait = DelayPolicy.waitSeconds(s.continueDelaySeconds, s.escalatingDelay, consecutiveContinues)
 
-        // Livello = numero di "Continua" consecutivi; finiti i livelli si resta sull'ultimo.
+        // Level = number of consecutive "Continue" taps; after the last level it stays on the last one.
         val messages = s.messages.ifEmpty { listOf("") }
         val index = minOf(consecutiveContinues, messages.lastIndex)
-        safe("indice messaggio") { counters.onMessageShown(index) }
 
         val blocks = try {
             counters.onBlockShown()
         } catch (e: Exception) {
-            onError("contatore blocchi", e)
+            onError("block counter", e)
             s.blocksToday + 1
         }
 
@@ -216,29 +234,29 @@ class BlockController(
         continueEnabledAt = now + wait * 1000L
         lastVisibleAt = now
 
-        safe("mostra schermata") { actions.showOverlay(model) }
+        safe("show block screen") { actions.showOverlay(model) }
         overlayShown = true
-        // Con un video personalizzato l'audio serve: il player chiede il focus audio
-        // (l'app sotto si mette in pausa) invece di silenziare tutto.
+        // A custom video needs its sound: the player requests audio focus
+        // (the app underneath pauses) instead of muting everything.
         if (s.muteAudio && !model.playsOwnAudio && !muted) {
-            safe("silenzia audio") { actions.muteAudio() }
+            safe("mute audio") { actions.muteAudio() }
             muted = true
         }
-        setState(BlockState.BLOCCATO, reason)
+        setState(BlockState.BLOCKED, reason)
     }
 
-    /** Toglie la schermata e ripristina l'audio. Ogni passo è indipendente dagli errori degli altri. */
+    /** Removes the block screen and restores the audio. Each step runs even if another one fails. */
     private fun hideAll() {
         confirmJob?.cancel()
         confirmJob = null
         if (overlayShown) {
             overlayShown = false
             lastVisibleAt = clock()
-            safe("nascondi schermata") { actions.hideOverlay() }
+            safe("hide block screen") { actions.hideOverlay() }
         }
         if (muted) {
             muted = false
-            safe("ripristina audio") { actions.restoreAudio() }
+            safe("restore audio") { actions.restoreAudio() }
         }
     }
 
@@ -255,16 +273,16 @@ class BlockController(
         observedPager = null
         observedFingerprint = null
         noneStreak = 0
-        setState(BlockState.INATTIVO, reason)
+        setState(BlockState.IDLE, reason)
     }
 
-    /** Un solo "Nessuno" in BLOCCATO non basta: si ricontrolla poco dopo anche se non arrivano eventi. */
+    /** A single "None" in BLOCKED is not enough: check again shortly, even if no events arrive. */
     private fun scheduleConfirm() {
         if (confirmJob?.isActive == true) return
         confirmJob = scope.launch {
             delay(CONFIRM_NONE_MS)
             confirmJob = null
-            if (state == BlockState.BLOCCATO) onDetection(evaluate())
+            if (state == BlockState.BLOCKED) onDetection(evaluate())
         }
     }
 
@@ -274,7 +292,7 @@ class BlockController(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            onError("valutazione regole", e)
+            onError("rule evaluation", e)
             Detection.None
         }
 
@@ -295,8 +313,19 @@ class BlockController(
     }
 
     companion object {
+        /** After "Exit", how long to wait before checking that the user really left; if not, go Home. */
         const val EXIT_CHECK_MS = 600L
+
+        /** After a single "None" in BLOCKED, how long to wait before checking again. */
         const val CONFIRM_NONE_MS = 300L
+
+        /**
+         * A tap on "Continue" up to this much early is accepted: the countdown on the block screen
+         * and the controller's clock can differ by a few milliseconds.
+         */
         const val CONTINUE_TOLERANCE_MS = 250L
+
+        /** Consecutive "None" results that remove the block screen: one alone can happen during a UI transition. */
+        const val NONE_STREAK_TO_LEAVE = 2
     }
 }

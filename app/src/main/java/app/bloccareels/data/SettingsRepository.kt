@@ -33,10 +33,13 @@ private data class StoredMedia(val path: String, val kind: String)
 
 private val Context.settingsStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
-/** Unica porta verso DataStore. */
+/** Values used when a key is missing or invalid: the defaults of [Settings]. */
+private val DEFAULTS = Settings()
+
+/** The only way to DataStore. */
 class SettingsRepository(
     context: Context,
-    /** Messaggi iniziali nella lingua indicata ("" = sistema). */
+    /** Initial messages in the given language ("" = system). */
     private val defaultMessages: (language: String) -> List<String>,
     scope: CoroutineScope,
     private val today: () -> String = { LocalDate.now().toString() },
@@ -51,10 +54,10 @@ class SettingsRepository(
 
     private val _loaded = MutableStateFlow(false)
 
-    /** True dopo la prima lettura reale da disco. */
+    /** True after the first real read from disk. */
     val loaded: StateFlow<Boolean> = _loaded.asStateFlow()
 
-    /** Ultimo valore noto, per chi deve leggere in modo sincrono (servizio e controller). */
+    /** Last known value, for whoever has to read synchronously (service and controller). */
     val state: StateFlow<Settings> = settingsFlow
         .onEach { _loaded.value = true }
         .stateIn(scope, SharingStarted.Eagerly, Settings(messages = defaultMessages("")))
@@ -81,22 +84,20 @@ class SettingsRepository(
                 .let { list -> List(messages.size) { i -> list.getOrNull(i) } }
         }
         return Settings(
-            masterEnabled = p[K.master] ?: true,
-            onboardingDone = p[K.onboarding] ?: false,
+            masterEnabled = p[K.master] ?: DEFAULTS.masterEnabled,
+            onboardingDone = p[K.onboarding] ?: DEFAULTS.onboardingDone,
             appEnabled = AppIds.ALL.associateWith { id -> p[K.app(id)] ?: AppIds.DEFAULT_ENABLED.getValue(id) },
-            truceSeconds = p[K.truce]?.takeIf { it in Settings.TRUCE_CHOICES } ?: 3,
-            continueDelaySeconds = p[K.delay]?.takeIf { it in Settings.DELAY_CHOICES } ?: 0,
-            escalatingDelay = p[K.escalating] ?: true,
-            muteAudio = p[K.mute] ?: true,
+            truceSeconds = p[K.truce]?.takeIf { it in Settings.TRUCE_CHOICES } ?: DEFAULTS.truceSeconds,
+            continueDelaySeconds = p[K.delay]?.takeIf { it in Settings.DELAY_CHOICES } ?: DEFAULTS.continueDelaySeconds,
+            escalatingDelay = p[K.escalating] ?: DEFAULTS.escalatingDelay,
+            muteAudio = p[K.mute] ?: DEFAULTS.muteAudio,
             illustration = Illustration.fromKey(p[K.illustration]).let {
-                if (it == Illustration.PERSONALIZZATO && media == null) Illustration.TRAMONTO else it
+                if (it == Illustration.CUSTOM && media == null) DEFAULTS.illustration else it
             },
             customMedia = media,
             messages = messages,
             levelMedia = levelMedia,
             language = language,
-            lastMessageIndex = p[K.lastMessage] ?: -1,
-            debugEnabled = p[K.debug] ?: false,
             counterDate = p[K.counterDate].orEmpty(),
             blocksToday = if (isToday) p[K.blocks] ?: 0 else 0,
             continueToday = if (isToday) p[K.continues] ?: 0 else 0,
@@ -116,27 +117,24 @@ class SettingsRepository(
     suspend fun setEscalatingDelay(v: Boolean) = edit { it[K.escalating] = v }
     suspend fun setMuteAudio(v: Boolean) = edit { it[K.mute] = v }
     suspend fun setIllustration(v: Illustration) = edit { it[K.illustration] = v.key }
-    /** Imposta il media personalizzato e lo seleziona. */
+    /** Sets the custom media and selects it. */
     suspend fun setCustomMedia(media: CustomMedia) = edit {
         it[K.mediaPath] = media.path
         it[K.mediaKind] = media.kind.key
-        it[K.illustration] = Illustration.PERSONALIZZATO.key
+        it[K.illustration] = Illustration.CUSTOM.key
     }
 
     suspend fun clearCustomMedia() = edit {
         it.remove(K.mediaPath)
         it.remove(K.mediaKind)
-        if (it[K.illustration] == Illustration.PERSONALIZZATO.key) it[K.illustration] = Illustration.TRAMONTO.key
+        if (it[K.illustration] == Illustration.CUSTOM.key) it[K.illustration] = DEFAULTS.illustration.key
     }
 
     suspend fun setLanguage(tag: String) = edit { it[K.language] = tag }
 
-    suspend fun setDebugEnabled(v: Boolean) = edit { it[K.debug] = v }
-    suspend fun setLastMessageIndex(v: Int) = edit { it[K.lastMessage] = v }
-
     /**
-     * Salva i livelli: messaggio e media di ciascuno. I livelli con messaggio vuoto vengono
-     * scartati insieme al loro media. Deve restarne almeno uno.
+     * Saves the levels: message and media of each one. Levels with an empty message are
+     * dropped together with their media. At least one must remain.
      */
     suspend fun setLevels(messages: List<String>, media: List<CustomMedia?>) {
         val pairs = messages.mapIndexed { i, m -> m.trim() to media.getOrNull(i) }.filter { it.first.isNotEmpty() }
@@ -157,7 +155,7 @@ class SettingsRepository(
 
     enum class Counter { BLOCKS, CONTINUE, EXIT }
 
-    /** Incrementa un contatore del giorno; se la data è cambiata azzera prima i tre contatori. */
+    /** Increments one of today's counters; if the date changed, first resets all three. */
     suspend fun increment(counter: Counter) = edit { p ->
         val t = today()
         if (p[K.counterDate] != t) {
@@ -174,6 +172,7 @@ class SettingsRepository(
         p[key] = (p[key] ?: 0) + 1
     }
 
+    /** DataStore keys. They are saved on the device: renaming one loses that setting. */
     private object K {
         val master = booleanPreferencesKey("master_enabled")
         val onboarding = booleanPreferencesKey("onboarding_done")
@@ -188,8 +187,6 @@ class SettingsRepository(
         val levelMediaJson = stringPreferencesKey("level_media_json")
         val language = stringPreferencesKey("language")
         val messagesJson = stringPreferencesKey("messages_json")
-        val lastMessage = intPreferencesKey("last_message_index")
-        val debug = booleanPreferencesKey("debug_enabled")
         val counterDate = stringPreferencesKey("counter_date")
         val blocks = intPreferencesKey("counter_blocks")
         val continues = intPreferencesKey("counter_continue")

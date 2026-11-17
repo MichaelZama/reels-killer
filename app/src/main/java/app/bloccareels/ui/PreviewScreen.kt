@@ -19,8 +19,8 @@ import app.bloccareels.data.Settings
 import app.bloccareels.overlay.OverlayBinder
 
 /**
- * Anteprima della schermata di blocco dentro l'app.
- * Usa lo stesso layout dell'overlay; non tocca contatori né audio.
+ * Preview of the block screen inside the app.
+ * It uses the same layout as the overlay and touches neither counters nor audio.
  */
 @Composable
 fun PreviewScreen(settings: Settings, onClose: () -> Unit) {
@@ -36,7 +36,7 @@ fun PreviewScreen(settings: Settings, onClose: () -> Unit) {
             subtitle = subtitle,
             illustration = settings.illustration,
             blocksToday = settings.blocksToday + 1,
-            waitSeconds = DelayPolicy.attesa(settings.continueDelaySeconds, settings.escalatingDelay, 0),
+            waitSeconds = DelayPolicy.waitSeconds(settings.continueDelaySeconds, settings.escalatingDelay, 0),
             showEscalationHint = false,
             customMedia = settings.mediaForLevel(0),
         )

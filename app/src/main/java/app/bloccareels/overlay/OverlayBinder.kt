@@ -12,8 +12,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
- * Riempie la vista della schermata di blocco e gestisce il conto alla rovescia.
- * Usato sia dall'overlay del servizio sia dall'anteprima nelle impostazioni.
+ * Fills the block screen view and runs the countdown.
+ * Used both by the service's overlay and by the preview in the settings.
  */
 class OverlayBinder(
     private val root: View,
@@ -102,10 +102,12 @@ class OverlayBinder(
 
     companion object {
         fun drawableFor(i: Illustration): Int = when (i) {
-            Illustration.TRAMONTO -> R.drawable.ill_tramonto
-            Illustration.TAZZA -> R.drawable.ill_tazza
-            Illustration.FOGLIA -> R.drawable.ill_foglia
-            Illustration.PERSONALIZZATO -> R.drawable.ill_tramonto
+            Illustration.SUNSET -> R.drawable.ill_sunset
+            Illustration.CUP -> R.drawable.ill_cup
+            Illustration.LEAF -> R.drawable.ill_leaf
+            // Never drawn: with "custom" the block screen shows the user's media.
+            // It is here only to make the when exhaustive.
+            Illustration.CUSTOM -> R.drawable.ill_sunset
         }
     }
 }

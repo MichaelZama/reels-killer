@@ -33,41 +33,41 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-/** Palette dell'app. Un solo tema, scuro. */
-object BrColors {
-    val Sfondo = Color(0xFF12181F)
-    val Superficie = Color(0xFF1C2530)
-    val Bordo = Color(0xFF2A3541)
-    val BordoForte = Color(0xFF5E6C7A)
-    val Testo = Color(0xFFE8ECEF)
-    val TestoSecondario = Color(0xFF9AA7B4)
-    val Accento = Color(0xFF4FB0A5)
-    val SuAccento = Color(0xFF0E1418)
-    val Avviso = Color(0xFFE0A84F)
+/** App palette. A single, dark theme. */
+object AppColors {
+    val Background = Color(0xFF12181F)
+    val Surface = Color(0xFF1C2530)
+    val Border = Color(0xFF2A3541)
+    val BorderStrong = Color(0xFF5E6C7A)
+    val TextPrimary = Color(0xFFE8ECEF)
+    val TextSecondary = Color(0xFF9AA7B4)
+    val Accent = Color(0xFF4FB0A5)
+    val OnAccent = Color(0xFF0E1418)
+    val Warning = Color(0xFFE0A84F)
 }
 
 private val scheme = darkColorScheme(
-    primary = BrColors.Accento,
-    onPrimary = BrColors.SuAccento,
-    secondary = BrColors.Accento,
-    onSecondary = BrColors.SuAccento,
-    background = BrColors.Sfondo,
-    onBackground = BrColors.Testo,
-    surface = BrColors.Sfondo,
-    onSurface = BrColors.Testo,
-    surfaceVariant = BrColors.Superficie,
-    onSurfaceVariant = BrColors.TestoSecondario,
-    surfaceContainer = BrColors.Superficie,
-    surfaceContainerHigh = BrColors.Superficie,
-    surfaceContainerHighest = BrColors.Superficie,
-    outline = BrColors.BordoForte,
-    outlineVariant = BrColors.Bordo,
-    error = BrColors.Avviso,
-    onError = BrColors.SuAccento,
+    primary = AppColors.Accent,
+    onPrimary = AppColors.OnAccent,
+    secondary = AppColors.Accent,
+    onSecondary = AppColors.OnAccent,
+    background = AppColors.Background,
+    onBackground = AppColors.TextPrimary,
+    surface = AppColors.Background,
+    onSurface = AppColors.TextPrimary,
+    surfaceVariant = AppColors.Surface,
+    onSurfaceVariant = AppColors.TextSecondary,
+    surfaceContainer = AppColors.Surface,
+    surfaceContainerHigh = AppColors.Surface,
+    surfaceContainerHighest = AppColors.Surface,
+    outline = AppColors.BorderStrong,
+    outlineVariant = AppColors.Border,
+    error = AppColors.Warning,
+    onError = AppColors.OnAccent,
 )
 
 @Composable
-fun BloccaTheme(content: @Composable () -> Unit) {
+fun ReelsKillerTheme(content: @Composable () -> Unit) {
     MaterialTheme(colorScheme = scheme, content = content)
 }
 
@@ -76,7 +76,7 @@ fun SectionCard(title: String, content: @Composable ColumnScope.() -> Unit) {
     Column(Modifier.fillMaxWidth()) {
         Text(
             text = title,
-            color = BrColors.TestoSecondario,
+            color = AppColors.TextSecondary,
             fontSize = 13.sp,
             modifier = Modifier
                 .padding(start = 4.dp, bottom = 8.dp)
@@ -86,7 +86,7 @@ fun SectionCard(title: String, content: @Composable ColumnScope.() -> Unit) {
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(20.dp))
-                .background(BrColors.Superficie)
+                .background(AppColors.Surface)
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
             content = content,
@@ -95,19 +95,19 @@ fun SectionCard(title: String, content: @Composable ColumnScope.() -> Unit) {
 }
 
 @Composable
-fun brSwitchColors() = SwitchDefaults.colors(
-    checkedThumbColor = BrColors.SuAccento,
-    checkedTrackColor = BrColors.Accento,
-    checkedBorderColor = BrColors.Accento,
-    uncheckedThumbColor = BrColors.BordoForte,
-    uncheckedTrackColor = BrColors.Sfondo,
-    uncheckedBorderColor = BrColors.BordoForte,
-    disabledUncheckedTrackColor = BrColors.Sfondo,
-    disabledUncheckedBorderColor = BrColors.Bordo,
-    disabledUncheckedThumbColor = BrColors.Bordo,
+fun appSwitchColors() = SwitchDefaults.colors(
+    checkedThumbColor = AppColors.OnAccent,
+    checkedTrackColor = AppColors.Accent,
+    checkedBorderColor = AppColors.Accent,
+    uncheckedThumbColor = AppColors.BorderStrong,
+    uncheckedTrackColor = AppColors.Background,
+    uncheckedBorderColor = AppColors.BorderStrong,
+    disabledUncheckedTrackColor = AppColors.Background,
+    disabledUncheckedBorderColor = AppColors.Border,
+    disabledUncheckedThumbColor = AppColors.Border,
 )
 
-/** Riga con interruttore: tutta la riga è toccabile e letta come un unico controllo. */
+/** Row with a switch: the whole row is tappable and read as a single control. */
 @Composable
 fun SwitchRow(
     title: String,
@@ -125,15 +125,15 @@ fun SwitchRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f)) {
-            Text(title, color = BrColors.Testo, fontSize = 16.sp)
-            if (note != null) Text(note, color = BrColors.TestoSecondario, fontSize = 13.sp)
+            Text(title, color = AppColors.TextPrimary, fontSize = 16.sp)
+            if (note != null) Text(note, color = AppColors.TextSecondary, fontSize = 13.sp)
         }
         Spacer(Modifier.width(12.dp))
-        Switch(checked = checked, onCheckedChange = null, enabled = enabled, colors = brSwitchColors())
+        Switch(checked = checked, onCheckedChange = null, enabled = enabled, colors = appSwitchColors())
     }
 }
 
-/** Scelta tra pochi valori, come pulsanti affiancati. */
+/** Choice among a few values, as side-by-side buttons. */
 @Composable
 fun <T> ChoiceRow(
     options: List<T>,
@@ -151,15 +151,15 @@ fun <T> ChoiceRow(
                     .weight(1f)
                     .heightIn(min = 48.dp)
                     .clip(RoundedCornerShape(24.dp))
-                    .background(if (isSel) BrColors.Accento else BrColors.Superficie)
-                    .border(1.dp, if (isSel) BrColors.Accento else BrColors.Bordo, RoundedCornerShape(24.dp))
+                    .background(if (isSel) AppColors.Accent else AppColors.Surface)
+                    .border(1.dp, if (isSel) AppColors.Accent else AppColors.Border, RoundedCornerShape(24.dp))
                     .selectable(selected = isSel, role = Role.RadioButton, onClick = { onSelect(option) })
                     .semantics { contentDescription = desc },
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
                     label(option),
-                    color = if (isSel) BrColors.SuAccento else BrColors.Testo,
+                    color = if (isSel) AppColors.OnAccent else AppColors.TextPrimary,
                     fontSize = 15.sp,
                 )
             }

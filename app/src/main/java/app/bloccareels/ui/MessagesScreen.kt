@@ -53,7 +53,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import app.bloccareels.AppContainer
 import app.bloccareels.R
 import app.bloccareels.data.CustomMedia
 import app.bloccareels.data.MediaImporter
@@ -64,12 +63,12 @@ import kotlinx.coroutines.launch
 private val LEVEL_THUMB = 56.dp
 
 /**
- * Livelli della schermata di blocco: livello 1 = primo blocco, livello 2 = dopo il primo "Continua"...
- * Ogni livello ha un messaggio e, se si vuole, un'immagine, una GIF o un video.
- * Un livello senza media usa quello del livello precedente.
+ * Levels of the block screen: level 1 = first block, level 2 = after the first "Continue"...
+ * Each level has a message and, optionally, an image, a GIF or a video.
+ * A level without media uses the previous level's.
  */
 @Composable
-fun MessagesScreen(c: AppContainer, initial: Settings, onBack: () -> Unit) {
+fun MessagesScreen(model: UiModel, initial: Settings, onBack: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val texts = remember { mutableStateListOf<String>().apply { addAll(initial.messages) } }
@@ -78,16 +77,9 @@ fun MessagesScreen(c: AppContainer, initial: Settings, onBack: () -> Unit) {
     }
     val defaults = stringArrayResource(R.array.default_messages).toList()
 
-    fun persist() {
-        val t = texts.toList()
-        val m = media.toList()
-        c.appScope.launch {
-            c.settings.setLevels(t, m)
-            c.cleanupMedia()
-        }
-    }
+    fun persist() = model.saveLevels(texts.toList(), media.toList())
 
-    // Selettore di media condiviso: [pickTarget] è il livello che riceve il file.
+    // Shared media picker: [pickTarget] is the level that receives the file.
     var pickTarget by remember { mutableIntStateOf(-1) }
     var busyLevel by remember { mutableIntStateOf(-1) }
     val msgTooLong = stringResource(R.string.media_too_long, MediaImporter.MAX_VIDEO_SECONDS)
@@ -109,7 +101,7 @@ fun MessagesScreen(c: AppContainer, initial: Settings, onBack: () -> Unit) {
                 MediaImporter.Result.TooBig -> msgTooBig
                 MediaImporter.Result.Unsupported -> msgUnsupported
                 is MediaImporter.Result.Failed -> {
-                    c.diagnostics.error("Importazione media", r.error)
+                    model.diagnostics.error("Media import", r.error)
                     msgFailed
                 }
             }
@@ -127,11 +119,11 @@ fun MessagesScreen(c: AppContainer, initial: Settings, onBack: () -> Unit) {
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         TextButton(onClick = onBack, modifier = Modifier.heightIn(min = 48.dp)) {
-            Text("‹ " + stringResource(R.string.back), color = BrColors.Accento)
+            Text("‹ " + stringResource(R.string.back), color = AppColors.Accent)
         }
         Text(
             stringResource(R.string.messages_title),
-            color = BrColors.Testo,
+            color = AppColors.TextPrimary,
             fontSize = 24.sp,
             fontWeight = FontWeight.Medium,
             modifier = Modifier
@@ -140,26 +132,30 @@ fun MessagesScreen(c: AppContainer, initial: Settings, onBack: () -> Unit) {
         )
         Text(
             stringResource(R.string.messages_hint, MediaImporter.MAX_VIDEO_SECONDS),
-            color = BrColors.TestoSecondario,
+            color = AppColors.TextSecondary,
             fontSize = 14.sp,
             modifier = Modifier.padding(start = 4.dp),
         )
 
         texts.forEachIndexed { index, text ->
-            // Media effettivo del livello, anche se ereditato dai precedenti.
+            // The level's effective media, even when inherited from the previous ones.
             val own = media.getOrNull(index)
-            val inherited = if (own == null) (index - 1 downTo 0).firstNotNullOfOrNull { media.getOrNull(it) } ?: initial.activeCustomMedia else null
+            val inherited = if (own != null) {
+                null
+            } else {
+                (index - 1 downTo 0).firstNotNullOfOrNull { media.getOrNull(it) } ?: initial.activeCustomMedia
+            }
             Column(
                 Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(20.dp))
-                    .background(BrColors.Superficie)
+                    .background(AppColors.Surface)
                     .padding(12.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Text(
                     stringResource(if (index == 0) R.string.level_first else R.string.level_n, index + 1, index),
-                    color = BrColors.TestoSecondario,
+                    color = AppColors.TextSecondary,
                     fontSize = 13.sp,
                 )
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -183,13 +179,13 @@ fun MessagesScreen(c: AppContainer, initial: Settings, onBack: () -> Unit) {
                         label = { Text(stringResource(R.string.message_field, index + 1)) },
                         modifier = Modifier.weight(1f),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = BrColors.Accento,
-                            unfocusedBorderColor = BrColors.Bordo,
-                            focusedLabelColor = BrColors.Accento,
-                            unfocusedLabelColor = BrColors.TestoSecondario,
-                            cursorColor = BrColors.Accento,
-                            focusedTextColor = BrColors.Testo,
-                            unfocusedTextColor = BrColors.Testo,
+                            focusedBorderColor = AppColors.Accent,
+                            unfocusedBorderColor = AppColors.Border,
+                            focusedLabelColor = AppColors.Accent,
+                            unfocusedLabelColor = AppColors.TextSecondary,
+                            cursorColor = AppColors.Accent,
+                            focusedTextColor = AppColors.TextPrimary,
+                            unfocusedTextColor = AppColors.TextPrimary,
                         ),
                     )
                 }
@@ -201,7 +197,7 @@ fun MessagesScreen(c: AppContainer, initial: Settings, onBack: () -> Unit) {
                                 persist()
                             },
                             modifier = Modifier.heightIn(min = 48.dp),
-                        ) { Text(stringResource(R.string.level_media_remove), color = BrColors.TestoSecondario) }
+                        ) { Text(stringResource(R.string.level_media_remove), color = AppColors.TextSecondary) }
                     }
                     val removeLabel = stringResource(R.string.message_remove, index + 1)
                     TextButton(
@@ -217,7 +213,7 @@ fun MessagesScreen(c: AppContainer, initial: Settings, onBack: () -> Unit) {
                     ) {
                         Text(
                             stringResource(R.string.level_remove),
-                            color = if (texts.size > 1) BrColors.TestoSecondario else BrColors.Bordo,
+                            color = if (texts.size > 1) AppColors.TextSecondary else AppColors.Border,
                         )
                     }
                 }
@@ -232,7 +228,7 @@ fun MessagesScreen(c: AppContainer, initial: Settings, onBack: () -> Unit) {
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(min = 48.dp),
-        ) { Text("+ " + stringResource(R.string.level_add), color = BrColors.Accento) }
+        ) { Text("+ " + stringResource(R.string.level_add), color = AppColors.Accent) }
 
         TextButton(
             onClick = {
@@ -240,19 +236,16 @@ fun MessagesScreen(c: AppContainer, initial: Settings, onBack: () -> Unit) {
                 texts.addAll(defaults)
                 media.clear()
                 media.addAll(List(defaults.size) { null })
-                c.appScope.launch {
-                    c.settings.resetMessages()
-                    c.cleanupMedia()
-                }
+                model.resetLevels()
             },
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(min = 48.dp),
-        ) { Text(stringResource(R.string.messages_reset), color = BrColors.TestoSecondario) }
+        ) { Text(stringResource(R.string.messages_reset), color = AppColors.TextSecondary) }
     }
 }
 
-/** Miniatura del media di un livello: proprio, ereditato (sbiadito) oppure "+". */
+/** Thumbnail of a level's media: its own, inherited (faded) or "+". */
 @Composable
 private fun LevelMediaThumb(
     media: CustomMedia?,
@@ -270,15 +263,15 @@ private fun LevelMediaThumb(
         modifier = Modifier
             .size(LEVEL_THUMB)
             .clip(RoundedCornerShape(14.dp))
-            .background(BrColors.Sfondo)
-            .border(1.dp, if (media != null) BrColors.Accento else BrColors.Bordo, RoundedCornerShape(14.dp))
+            .background(AppColors.Background)
+            .border(1.dp, if (media != null) AppColors.Accent else AppColors.Border, RoundedCornerShape(14.dp))
             .clickable(role = Role.Button, onClick = onClick)
             .semantics { contentDescription = description },
         contentAlignment = Alignment.Center,
     ) {
         val bmp = thumb
         when {
-            busy -> Text("…", color = BrColors.TestoSecondario, fontSize = 20.sp)
+            busy -> Text("…", color = AppColors.TextSecondary, fontSize = 20.sp)
             bmp != null -> Image(
                 bitmap = bmp.asImageBitmap(),
                 contentDescription = null,
@@ -287,7 +280,7 @@ private fun LevelMediaThumb(
                 modifier = Modifier.fillMaxSize(),
             )
         }
-        if (!busy && media == null) Text("+", color = BrColors.Accento, fontSize = 24.sp)
-        if (!busy && media?.kind == MediaKind.VIDEO && bmp != null) Text("▶", color = BrColors.Testo, fontSize = 14.sp)
+        if (!busy && media == null) Text("+", color = AppColors.Accent, fontSize = 24.sp)
+        if (!busy && media?.kind == MediaKind.VIDEO && bmp != null) Text("▶", color = AppColors.TextPrimary, fontSize = 14.sp)
     }
 }

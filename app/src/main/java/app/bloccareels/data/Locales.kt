@@ -7,9 +7,9 @@ import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
 
 /**
- * Lingua dell'app: "" = quella del sistema, altrimenti un tag come "it" o "en".
- * L'interfaccia la applica con AppCompat; servizio, schermata di blocco e notifica
- * usano [wrap] con il valore salvato, così funzionano anche senza un'activity aperta.
+ * App language: "" = the system one, otherwise a tag such as "it" or "en".
+ * The UI applies it through AppCompat; the service, block screen and notification
+ * use [wrap] with the saved value, so they work without an open activity.
  */
 object Locales {
     val SUPPORTED = listOf("", "it", "en")
@@ -21,14 +21,14 @@ object Locales {
         return context.createConfigurationContext(cfg)
     }
 
-    /** Applica la lingua all'interfaccia (va chiamato dal thread principale). */
+    /** Applies the language to the UI (must be called from the main thread). */
     fun applyToUi(tag: String) {
         AppCompatDelegate.setApplicationLocales(
             if (tag.isEmpty()) LocaleListCompat.getEmptyLocaleList() else LocaleListCompat.forLanguageTags(tag),
         )
     }
 
-    /** Lingua impostata nell'interfaccia (anche dalle impostazioni di sistema per app su Android 13+). */
+    /** Language set on the UI (also from the per-app system settings on Android 13+). */
     fun currentUiTag(): String {
         val l = AppCompatDelegate.getApplicationLocales()
         return if (l.isEmpty) "" else l[0]?.language.orEmpty()
