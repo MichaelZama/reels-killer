@@ -4,11 +4,11 @@
     {
       "id": "instagram",
       "packages": ["com.instagram.android"],
-      "label": "Sei nei Reels di Instagram.",
+      "label": "You are in Instagram Reels.",
       "exitAction": "back",
       "rules": [
         {
-          "name": "scheda_reels",
+          "name": "reels_tab",
           "mode": "feed",
           "allOf": [
             { "viewId": "clips_viewer_view_pager" },
@@ -16,7 +16,7 @@
           ]
         },
         {
-          "name": "reel_singolo",
+          "name": "single_reel",
           "mode": "single",
           "pagerViewId": "clips_viewer_view_pager",
           "allOf": [ { "viewId": "clips_viewer_view_pager" } ]
@@ -26,11 +26,11 @@
     {
       "id": "youtube",
       "packages": ["com.google.android.youtube"],
-      "label": "Sei negli Shorts di YouTube.",
+      "label": "You are in YouTube Shorts.",
       "exitAction": "back",
       "rules": [
         {
-          "name": "scheda_shorts",
+          "name": "shorts_tab",
           "mode": "feed",
           "anyOf": [
             { "viewId": "reel_recycler" },
@@ -39,7 +39,7 @@
           "allOf": [ { "descAnyOf": ["Shorts"], "selected": true } ]
         },
         {
-          "name": "short_singolo",
+          "name": "single_short",
           "mode": "single",
           "pagerViewId": "reel_recycler",
           "anyOf": [
@@ -52,18 +52,18 @@
     {
       "id": "tiktok",
       "packages": ["com.zhiliaoapp.musically", "com.ss.android.ugc.trill"],
-      "label": "Sei su TikTok.",
+      "label": "You are on TikTok.",
       "exitAction": "home",
-      "rules": [ { "name": "tutta_la_app", "mode": "feed", "always": true } ]
+      "rules": [ { "name": "whole_app", "mode": "feed", "always": true } ]
     },
     {
       "id": "facebook",
       "packages": ["com.facebook.katana"],
-      "label": "Sei nei Reels di Facebook.",
+      "label": "You are in Facebook Reels.",
       "exitAction": "back",
       "rules": [
         {
-          "name": "scheda_reels",
+          "name": "reels_tab",
           "mode": "feed",
           "allOf": [
             { "descAnyOf": ["Reels", "Reel"], "selected": true },

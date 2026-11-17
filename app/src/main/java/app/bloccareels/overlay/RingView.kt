@@ -9,7 +9,7 @@ import android.view.View
 import androidx.core.content.ContextCompat
 import app.bloccareels.R
 
-/** Anello del conto alla rovescia accanto a "Continua". */
+/** Countdown ring next to "Continue". */
 class RingView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
@@ -21,17 +21,17 @@ class RingView @JvmOverloads constructor(
     private val track = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         strokeWidth = stroke
-        color = ContextCompat.getColor(context, R.color.bordo)
+        color = ContextCompat.getColor(context, R.color.border)
     }
     private val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         strokeWidth = stroke
         strokeCap = Paint.Cap.ROUND
-        color = ContextCompat.getColor(context, R.color.accento)
+        color = ContextCompat.getColor(context, R.color.accent)
     }
     private val oval = RectF()
 
-    /** Da 0 a 1. */
+    /** From 0 to 1. */
     var progress: Float = 0f
         set(value) {
             field = value.coerceIn(0f, 1f)

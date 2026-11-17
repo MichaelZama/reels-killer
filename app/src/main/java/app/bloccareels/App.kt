@@ -4,6 +4,8 @@ import android.app.Application
 import android.content.Context
 import android.content.pm.PackageManager
 import android.media.AudioManager
+import app.bloccareels.data.Locales
+import app.bloccareels.data.MediaImporter
 import app.bloccareels.data.SettingsRepository
 import app.bloccareels.detect.DetectorEngine
 import app.bloccareels.detect.RulesFile
@@ -13,9 +15,14 @@ import app.bloccareels.diag.LogType
 import app.bloccareels.overlay.AudioDucker
 import app.bloccareels.overlay.SystemMusicStream
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.first
+import java.io.File
+import java.io.PrintWriter
+import java.io.StringWriter
+import java.time.LocalDateTime
 
 class App : Application() {
     lateinit var container: AppContainer
@@ -29,30 +36,30 @@ class App : Application() {
         recoverMutedAudio()
     }
 
-    /** Se il processo precedente è morto con l'audio silenziato da noi, lo riattiva (vedi [AudioDucker]). */
+    /** If the previous process died while we had muted the audio, unmute it (see [AudioDucker]). */
     private fun recoverMutedAudio() {
         try {
             val ducker = AudioDucker(
                 SystemMusicStream(getSystemService(AudioManager::class.java)),
                 AudioDucker.markerFile(this),
             )
-            ducker.recoverAfterProcessDeath()?.let { container.diagnostics.add(LogType.EVENTO, it) }
+            ducker.recoverAfterProcessDeath()?.let { container.diagnostics.add(LogType.EVENT, it) }
         } catch (e: Exception) {
-            container.diagnostics.error("Ripristino audio all'avvio", e)
+            container.diagnostics.error("Audio recovery at startup", e)
         }
     }
 
     /**
-     * Salva su file l'ultimo crash (solo lo stack trace, nessun contenuto delle schermate),
-     * così al riavvio compare nel log di diagnostica.
+     * Saves the last crash to a file (only the stack trace, no screen content),
+     * so that it shows up in the diagnostics log on the next start.
      */
     private fun installCrashRecorder() {
         val previous = Thread.getDefaultUncaughtExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler { thread, error ->
             try {
-                val trace = java.io.StringWriter().also { error.printStackTrace(java.io.PrintWriter(it)) }.toString()
-                java.io.File(filesDir, CRASH_FILE).writeText(
-                    "${java.time.LocalDateTime.now()} thread=${thread.name}\n$trace",
+                val trace = StringWriter().also { error.printStackTrace(PrintWriter(it)) }.toString()
+                File(filesDir, CRASH_FILE).writeText(
+                    "${LocalDateTime.now()} thread=${thread.name}\n$trace",
                 )
             } catch (_: Throwable) {
             }
@@ -62,34 +69,35 @@ class App : Application() {
 
     private fun reportPreviousCrash() {
         try {
-            val f = java.io.File(filesDir, CRASH_FILE)
+            val f = File(filesDir, CRASH_FILE)
             if (!f.exists()) return
             val lines = f.readLines()
             f.delete()
-            // Le prime righe bastano a capire dove è successo.
-            container.diagnostics.error("Crash precedente:\n" + lines.take(18).joinToString("\n"))
+            // The first lines are enough to see where it happened.
+            container.diagnostics.error("Previous crash:\n" + lines.take(CRASH_LINES_SHOWN).joinToString("\n"))
         } catch (_: Exception) {
         }
     }
 
     companion object {
         private const val CRASH_FILE = "last_crash.txt"
+        private const val CRASH_LINES_SHOWN = 18
     }
 }
 
-/** Oggetti condivisi tra servizio e activity, che vivono nello stesso processo. */
+/** Objects shared by the service and the activity, which live in the same process. */
 class AppContainer(context: Context) {
     val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     val diagnostics = DiagnosticsLog()
 
-    /** Richieste dall'interfaccia al servizio (stesso processo). */
-    val serviceCommands = kotlinx.coroutines.flow.MutableSharedFlow<ServiceCommand>(extraBufferCapacity = 8)
+    /** Requests from the UI to the service (same process). */
+    val serviceCommands = MutableSharedFlow<ServiceCommand>(extraBufferCapacity = 8)
 
     val settings = SettingsRepository(
         context = context,
         defaultMessages = { tag ->
-            app.bloccareels.data.Locales.wrap(context, tag).resources.getStringArray(R.array.default_messages).toList()
+            Locales.wrap(context, tag).resources.getStringArray(R.array.default_messages).toList()
         },
         scope = appScope,
     )
@@ -98,7 +106,7 @@ class AppContainer(context: Context) {
         val text = context.assets.open(RULES_ASSET).bufferedReader().use { it.readText() }
         RulesLoader.parse(text) { diagnostics.error(it) }
     } catch (e: Exception) {
-        diagnostics.error("Impossibile leggere $RULES_ASSET", e)
+        diagnostics.error("Cannot read $RULES_ASSET", e)
         RulesFile.EMPTY
     }
 
@@ -106,16 +114,16 @@ class AppContainer(context: Context) {
 
     private val appContext = context.applicationContext
 
-    /** Cancella i file media che nessun livello ne' il media generale usano piu'. */
+    /** Deletes the media files that neither a level nor the general media use any more. */
     suspend fun cleanupMedia() {
         val s = settings.settingsFlow.first()
         val keep = (s.levelMedia.mapNotNull { it?.path } + listOfNotNull(s.customMedia?.path)).toSet()
-        app.bloccareels.data.MediaImporter.cleanup(appContext, keep)
+        MediaImporter.cleanup(appContext, keep)
     }
 
     private val packageManager = context.packageManager
 
-    /** True se almeno un package dell'app ospite è installato. */
+    /** True if at least one package of the host app is installed. */
     fun isAppInstalled(appId: String): Boolean {
         val app = engine.appById(appId) ?: return false
         return app.packages.any { pkg ->

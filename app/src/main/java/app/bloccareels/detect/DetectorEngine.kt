@@ -1,7 +1,7 @@
 package app.bloccareels.detect
 
 /**
- * Motore delle regole. Kotlin puro: lavora solo su [UiSnapshot].
+ * The rules engine. Plain Kotlin: it only works on [UiSnapshot].
  */
 class DetectorEngine(val rules: RulesFile) {
 
@@ -12,7 +12,7 @@ class DetectorEngine(val rules: RulesFile) {
 
     fun appById(id: String): AppRules? = rules.apps.firstOrNull { it.id == id }
 
-    /** True se il package appartiene a un'app monitorata e abilitata. */
+    /** True if the package belongs to a monitored app that is enabled. */
     fun isMonitored(pkg: String?, enabledAppIds: Set<String>): Boolean =
         appForPackage(pkg)?.let { it.id in enabledAppIds } == true
 
@@ -36,9 +36,9 @@ class DetectorEngine(val rules: RulesFile) {
     }
 
     /**
-     * Prima le condizioni con viewId, che sono una ricerca mirata; poi quelle senza, che richiedono
-     * di visitare l'albero. Se fallisce una condizione veloce la visita non si fa: per esempio nella
-     * home di YouTube manca il player degli Shorts e la scheda selezionata non viene cercata.
+     * Conditions with a viewId come first, because they are a targeted lookup; then the ones without,
+     * which need a walk of the tree. If a fast condition fails the walk is skipped: for example on the
+     * YouTube home the Shorts player is missing, so the selected tab is never searched for.
      */
     private fun ruleMatches(rule: Rule, ctx: EvalContext): Boolean {
         if (rule.always) return true
@@ -81,7 +81,7 @@ class DetectorEngine(val rules: RulesFile) {
         return true
     }
 
-    /** Cache per una singola valutazione: ogni ricerca e la visita completa si fanno una volta sola. */
+    /** Cache for a single evaluation: each lookup and the full walk happen only once. */
     private class EvalContext(val snapshot: UiSnapshot) {
         private val idCache = HashMap<String, List<UiNode>>()
         private var all: List<UiNode>? = null

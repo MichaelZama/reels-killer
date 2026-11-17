@@ -11,18 +11,19 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import app.bloccareels.R
 import app.bloccareels.block.OverlayModel
+import app.bloccareels.data.Locales
 import app.bloccareels.diag.DiagnosticsLog
 import kotlinx.coroutines.CoroutineScope
 
 /**
- * Finestra della schermata di blocco. Tiene un solo riferimento alla vista.
- * Va usato solo dal thread principale.
+ * Window of the block screen. It holds a single reference to the view.
+ * Use it from the main thread only.
  */
 class OverlayManager(
     private val service: AccessibilityService,
     private val scope: CoroutineScope,
     private val log: DiagnosticsLog,
-    /** Lingua della schermata di blocco ("" = sistema). */
+    /** Language of the block screen ("" = system). */
     private val language: () -> String = { "" },
 ) {
     private val wm: WindowManager = service.getSystemService(WindowManager::class.java)
@@ -34,7 +35,7 @@ class OverlayManager(
     private var binder: OverlayBinder? = null
     private var params: WindowManager.LayoutParams? = null
 
-    /** Viste in dissolvenza di uscita, da rimuovere comunque in [removeAllNow]. */
+    /** Views that are fading out, removed anyway in [removeAllNow]. */
     private val leaving = mutableSetOf<View>()
 
     fun show(model: OverlayModel) {
@@ -43,7 +44,7 @@ class OverlayManager(
             binder?.bind(model, { onExit() }, { onContinue() })
             return
         }
-        val ctx = ContextThemeWrapper(app.bloccareels.data.Locales.wrap(service, language()), R.style.Theme_BloccaReels)
+        val ctx = ContextThemeWrapper(Locales.wrap(service, language()), R.style.Theme_ReelsKiller)
         val v = LayoutInflater.from(ctx).inflate(R.layout.overlay_block, null)
         val content = v.findViewById<View>(R.id.overlay_content)
         ViewCompat.setOnApplyWindowInsetsListener(v) { _, insets ->
@@ -57,7 +58,7 @@ class OverlayManager(
         try {
             wm.addView(v, p)
         } catch (e: Exception) {
-            log.error("addView fallito", e)
+            log.error("addView failed", e)
             return
         }
         view = v
@@ -74,13 +75,13 @@ class OverlayManager(
         view = null
         val p = params
         params = null
-        // Durante la dissolvenza i tocchi passano già all'app sotto.
+        // While fading out, touches already go to the app underneath.
         if (p != null) {
             try {
                 p.flags = p.flags or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
                 wm.updateViewLayout(v, p)
             } catch (e: Exception) {
-                log.error("updateViewLayout fallito", e)
+                log.error("updateViewLayout failed", e)
             }
         }
         leaving += v
@@ -88,7 +89,7 @@ class OverlayManager(
         v.animate().alpha(0f).setDuration(FADE_MS).withEndAction { remove(v) }.start()
     }
 
-    /** Rimozione immediata, senza dissolvenza: per quando il servizio si ferma. */
+    /** Immediate removal, without fading: for when the service stops. */
     fun removeAllNow() {
         binder?.cancel()
         binder = null
@@ -104,7 +105,7 @@ class OverlayManager(
         try {
             if (v.isAttachedToWindow) wm.removeViewImmediate(v)
         } catch (e: Exception) {
-            log.error("removeView fallito", e)
+            log.error("removeView failed", e)
         }
     }
 
@@ -115,7 +116,7 @@ class OverlayManager(
         WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
             WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
             WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS or
-            // Serve alla TextureView del video personalizzato.
+            // Needed by the TextureView of the custom video.
             WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
         PixelFormat.OPAQUE,
     ).apply {

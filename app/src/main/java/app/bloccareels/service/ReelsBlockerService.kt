@@ -20,14 +20,15 @@ import android.view.inputmethod.InputMethodManager
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import app.bloccareels.AppContainer
-import app.bloccareels.ServiceCommand
 import app.bloccareels.R
+import app.bloccareels.ServiceCommand
 import app.bloccareels.block.AppMeta
 import app.bloccareels.block.BlockActions
 import app.bloccareels.block.BlockController
 import app.bloccareels.block.Counters
 import app.bloccareels.block.OverlayModel
 import app.bloccareels.container
+import app.bloccareels.data.Locales
 import app.bloccareels.data.Settings
 import app.bloccareels.data.SettingsRepository
 import app.bloccareels.detect.Detection
@@ -49,13 +50,13 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 /**
- * Servizio di accessibilità: riceve gli eventi, limita la frequenza, valuta le regole
- * ed esegue i comandi del [BlockController].
+ * The accessibility service: receives events, throttles them, evaluates the rules
+ * and carries out the commands of the [BlockController].
  */
 class ReelsBlockerService : AccessibilityService() {
 
     private val scope = MainScope()
-    private lateinit var c: AppContainer
+    private lateinit var appContainer: AppContainer
     private lateinit var log: DiagnosticsLog
     private lateinit var overlay: OverlayManager
     private lateinit var ducker: AudioDucker
@@ -69,49 +70,49 @@ class ReelsBlockerService : AccessibilityService() {
     private var statusNotificationShown = false
     private var receiversRegistered = false
 
-    private val settings: StateFlow<Settings> get() = c.settings.state
+    private val settings: StateFlow<Settings> get() = appContainer.settings.state
 
-    // ------------------------------------------------------------ ciclo di vita
+    // -------------------------------------------------------------- lifecycle
 
     override fun onCreate() {
         super.onCreate()
-        applicationContext.container.diagnostics.add(LogType.EVENTO, "Servizio creato dal sistema")
+        applicationContext.container.diagnostics.add(LogType.EVENT, "Service created by the system")
     }
 
     override fun onServiceConnected() {
         super.onServiceConnected()
-        c = applicationContext.container
-        log = c.diagnostics
-        log.add(LogType.EVENTO, "Servizio in collegamento…")
+        appContainer = applicationContext.container
+        log = appContainer.diagnostics
+        log.add(LogType.EVENT, "Service connecting…")
         ducker = AudioDucker(SystemMusicStream(getSystemService(AudioManager::class.java)), AudioDucker.markerFile(this))
         overlay = OverlayManager(this, scope, log) { settings.value.language }
 
         val ctrl = BlockController(
             actions = Actions(),
             settings = settings,
-            counters = RepoCounters(c.settings, scope),
+            counters = RepoCounters(appContainer.settings, scope),
             scope = scope,
             clock = SystemClock::elapsedRealtime,
             appMeta = { id ->
-                c.engine.appById(id)?.let { AppMeta(localizedSubtitle(id) ?: it.label, it.exitAction) }
+                appContainer.engine.appById(id)?.let { AppMeta(localizedSubtitle(id) ?: it.label, it.exitAction) }
             },
             onTransition = { from, to, reason ->
-                log.add(LogType.TRANSIZIONE, "$from → $to ($reason)")
+                log.add(LogType.TRANSITION, "$from → $to ($reason)")
                 log.updateStatus { it.copy(controllerState = to.name) }
             },
             onError = { what, e -> log.error(what, e) },
         )
         controller = ctrl
-        overlay.onExit = { guarded("Esci") { ctrl.onExitTapped() } }
-        overlay.onContinue = { guarded("Continua") { ctrl.onContinueTapped() } }
+        overlay.onExit = { guarded("Exit") { ctrl.onExitTapped() } }
+        overlay.onContinue = { guarded("Continue") { ctrl.onContinueTapped() } }
 
         imePackages = loadImePackages()
         registerReceivers()
         scope.launch { settings.collect { s -> onSettingsChanged(s) } }
-        scope.launch { c.serviceCommands.collect { cmd -> guarded("comando") { onCommand(cmd) } } }
+        scope.launch { appContainer.serviceCommands.collect { cmd -> guarded("command") { onCommand(cmd) } } }
 
         log.updateStatus { it.copy(serviceConnected = true, controllerState = ctrl.state.name) }
-        log.add(LogType.EVENTO, "Servizio collegato. Regole versione ${c.rules.version}, app: ${c.rules.apps.size}")
+        log.add(LogType.EVENT, "Service connected. Rules version ${appContainer.rules.version}, apps: ${appContainer.rules.apps.size}")
     }
 
     override fun onInterrupt() {
@@ -119,42 +120,42 @@ class ReelsBlockerService : AccessibilityService() {
     }
 
     override fun onUnbind(intent: Intent?): Boolean {
-        stopEverything("servizio scollegato")
+        stopEverything("service unbound")
         return super.onUnbind(intent)
     }
 
     override fun onDestroy() {
-        stopEverything("servizio distrutto")
+        stopEverything("service destroyed")
         scope.cancel()
         super.onDestroy()
     }
 
     private fun stopEverything(reason: String) {
-        guarded("arresto") { controller?.onServiceStopped() }
+        guarded("stop") { controller?.onServiceStopped() }
         controller = null
-        if (::overlay.isInitialized) guarded("rimozione overlay") { overlay.removeAllNow() }
-        if (::ducker.isInitialized) guarded("ripristino audio") { ducker.restore() }
+        if (::overlay.isInitialized) guarded("overlay removal") { overlay.removeAllNow() }
+        if (::ducker.isInitialized) guarded("audio restore") { ducker.restore() }
         if (receiversRegistered) {
             guarded("receiver") { unregisterReceiver(receiver) }
             receiversRegistered = false
         }
         cancelStatusNotification()
         if (::log.isInitialized) {
-            log.updateStatus { it.copy(serviceConnected = false, controllerState = "INATTIVO") }
-            log.add(LogType.EVENTO, reason.replaceFirstChar { it.uppercase() })
+            log.updateStatus { it.copy(serviceConnected = false, controllerState = "IDLE") }
+            log.add(LogType.EVENT, reason.replaceFirstChar { it.uppercase() })
         }
     }
 
-    // ------------------------------------------------------------------ eventi
+    // ----------------------------------------------------------------- events
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         event ?: return
-        guarded("evento") { handleEvent(event) }
+        guarded("event") { handleEvent(event) }
     }
 
     private fun handleEvent(event: AccessibilityEvent) {
         val ctrl = controller ?: return
-        if (!c.settings.loaded.value) return
+        if (!appContainer.settings.loaded.value) return
         val s = settings.value
         if (!s.masterEnabled) return
 
@@ -163,11 +164,11 @@ class ReelsBlockerService : AccessibilityService() {
 
         val type = event.eventType
 
-        // Il servizio riceve gli eventi di tutte le app. Finché non c'è niente in corso, di un'app non
-        // monitorata conta solo il cambio di finestra (per accorgersi di quando se ne entra in una monitorata):
-        // gli altri eventi si scartano senza interrogare il sistema sulla finestra in primo piano.
+        // The service receives the events of every app. While nothing is in progress, for an app that
+        // is not monitored only the window change matters (to notice when a monitored one is entered):
+        // the other events are dropped without asking the system for the foreground window.
         if (type != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED && ctrl.isIdle &&
-            !c.engine.isMonitored(evPkg, s.enabledAppIds)
+            !appContainer.engine.isMonitored(evPkg, s.enabledAppIds)
         ) {
             return
         }
@@ -177,11 +178,11 @@ class ReelsBlockerService : AccessibilityService() {
         val fgPkg = foregroundRoot()?.packageName?.toString() ?: evPkg
         if (fgPkg != lastForegroundPackage) {
             lastForegroundPackage = fgPkg
-            log.add(LogType.EVENTO, "Primo piano: ${fgPkg ?: "?"}")
+            log.add(LogType.EVENT, "Foreground: ${fgPkg ?: "?"}")
         }
         log.updateStatus { it.copy(lastPackage = fgPkg, lastEventAtMs = System.currentTimeMillis()) }
 
-        if (!c.engine.isMonitored(fgPkg, s.enabledAppIds)) {
+        if (!appContainer.engine.isMonitored(fgPkg, s.enabledAppIds)) {
             pendingEval?.cancel()
             pendingEval = null
             publishDetection(Detection.None)
@@ -194,13 +195,13 @@ class ReelsBlockerService : AccessibilityService() {
             if (pager != null) {
                 val srcId = NodeAdapter.shortId(event.source?.viewIdResourceName)
                 if (srcId == pager) {
-                    log.add(LogType.EVENTO, "Scorrimento di $pager")
+                    log.add(LogType.EVENT, "Scroll of $pager")
                     ctrl.onSwipe()
                 }
             }
         }
 
-        // Limite di frequenza.
+        // Throttling: window changes are evaluated at once, the rest at most every THROTTLE_MS.
         if (type == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED || now - lastEvalAt >= THROTTLE_MS) {
             pendingEval?.cancel()
             pendingEval = null
@@ -210,7 +211,7 @@ class ReelsBlockerService : AccessibilityService() {
             pendingEval = scope.launch {
                 delay(wait)
                 pendingEval = null
-                guarded("valutazione programmata") { evaluateAndDispatch() }
+                guarded("scheduled evaluation") { evaluateAndDispatch() }
             }
         }
     }
@@ -222,28 +223,28 @@ class ReelsBlockerService : AccessibilityService() {
         ctrl.onDetection(d)
     }
 
-    /** Valutazione sincrona: usata dagli eventi e dal controller (fine tregua, controllo dopo Esci). */
+    /** Synchronous evaluation: used by the events and by the controller (truce over, check after Exit). */
     private fun evaluate(): Detection {
         lastEvalAt = SystemClock.elapsedRealtime()
         val s = settings.value
         if (!s.masterEnabled) return Detection.None
         val root = foregroundRoot() ?: return Detection.None
         val pkg = root.packageName?.toString()
-        if (!c.engine.isMonitored(pkg, s.enabledAppIds)) return Detection.None
+        if (!appContainer.engine.isMonitored(pkg, s.enabledAppIds)) return Detection.None
         val snapshot = NodeSnapshot(root, resources.displayMetrics.heightPixels)
-        return c.engine.detect(snapshot, s.enabledAppIds)
+        return appContainer.engine.detect(snapshot, s.enabledAppIds)
     }
 
     private fun publishDetection(d: Detection) {
         val text = d.describe()
         if (text != lastDetection) {
             lastDetection = text
-            log.add(LogType.RILEVAMENTO, text)
+            log.add(LogType.DETECTION, text)
             log.updateStatus { it.copy(lastDetection = text) }
         }
     }
 
-    /** Radice della finestra applicativa in primo piano. */
+    /** Root of the foreground application window. */
     private fun foregroundRoot(): AccessibilityNodeInfo? {
         val ws = try { windows } catch (_: Exception) { null }.orEmpty()
         if (ws.isNotEmpty()) {
@@ -254,12 +255,12 @@ class ReelsBlockerService : AccessibilityService() {
         return try { rootInActiveWindow } catch (_: Exception) { null }
     }
 
-    // ------------------------------------------------------------- impostazioni
+    // --------------------------------------------------------------- settings
 
     private var lastLanguage: String? = null
 
-    /** Contesto nella lingua scelta nelle impostazioni dell'app. */
-    private fun localized(): Context = app.bloccareels.data.Locales.wrap(this, settings.value.language)
+    /** Context in the language chosen in the app's settings. */
+    private fun localized(): Context = Locales.wrap(this, settings.value.language)
 
     private fun localizedSubtitle(appId: String): String? {
         val res = when (appId) {
@@ -275,13 +276,13 @@ class ReelsBlockerService : AccessibilityService() {
     private fun onSettingsChanged(s: Settings) {
         val ctrl = controller ?: return
         if (lastLanguage != null && lastLanguage != s.language) {
-            // Cambio di lingua: la notifica va riscritta.
+            // Language changed: the notification must be rewritten.
             cancelStatusNotification()
         }
         lastLanguage = s.language
         val app = ctrl.currentAppId
         if (!s.masterEnabled || (app != null && !s.isAppEnabled(app))) {
-            guarded("disattivazione") { ctrl.onDisabled() }
+            guarded("disable") { ctrl.onDisabled() }
         }
         updateStatusNotification()
     }
@@ -293,18 +294,18 @@ class ReelsBlockerService : AccessibilityService() {
         }
     }
 
-    // ---------------------------------------------------------------- receiver
+    // --------------------------------------------------------------- receiver
 
     private val receiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             when (intent.action) {
-                Intent.ACTION_SCREEN_OFF -> guarded("schermo spento") {
+                Intent.ACTION_SCREEN_OFF -> guarded("screen off") {
                     pendingEval?.cancel()
                     pendingEval = null
                     controller?.onScreenOff()
                 }
-                // Da Android 14 l'utente puo' scorrere via anche le notifiche fisse: la rimettiamo.
-                ACTION_NOTIFICATION_DISMISSED -> guarded("notifica") {
+                // From Android 14 the user can swipe away ongoing notifications too: we put it back.
+                ACTION_NOTIFICATION_DISMISSED -> guarded("notification") {
                     statusNotificationShown = false
                     updateStatusNotification()
                 }
@@ -322,28 +323,28 @@ class ReelsBlockerService : AccessibilityService() {
         receiversRegistered = true
     }
 
-    // -------------------------------------------------------------- diagnostica
+    // ------------------------------------------------------------ diagnostics
 
-    /** Esporta l'albero della finestra in primo piano dopo [delaySeconds] secondi. */
+    /** Exports the tree of the foreground window after [delaySeconds] seconds. */
     private fun exportTree(delaySeconds: Int) {
-        log.add(LogType.EVENTO, "Esportazione albero tra $delaySeconds s: apri la schermata da analizzare")
+        log.add(LogType.EVENT, "Exporting the tree in $delaySeconds s: open the screen to analyse")
         scope.launch {
             delay(delaySeconds * 1000L)
-            guarded("esportazione albero") {
+            guarded("tree export") {
                 val root = foregroundRoot()
                 if (root == null) {
-                    log.error("Esportazione: nessuna finestra in primo piano")
+                    log.error("Export: no foreground window")
                     return@guarded
                 }
                 val (file, count) = TreeDumper.dump(this@ReelsBlockerService, root)
-                log.add(LogType.EVENTO, "Albero esportato: ${file.name} ($count nodi)")
+                log.add(LogType.EVENT, "Tree exported: ${file.name} ($count nodes)")
             }
         }
     }
 
-    // --------------------------------------------------------- notifica di stato
+    // ---------------------------------------------------- status notification
 
-    /** Notifica discreta e fissa: c'e' solo mentre il servizio gira e il blocco e' acceso. */
+    /** Quiet, ongoing notification: it exists only while the service runs and blocking is on. */
     private fun updateStatusNotification() {
         val shouldShow = controller != null && settings.value.masterEnabled
         if (shouldShow) showStatusNotification() else cancelStatusNotification()
@@ -358,8 +359,8 @@ class ReelsBlockerService : AccessibilityService() {
         }
         val nm = getSystemService(NotificationManager::class.java)
         val text = localized()
-        // Canale della vecchia notifica di debug, non piu' usato.
-        guarded("canale debug") {
+        // Channel of the old debug notification, no longer used.
+        guarded("debug channel") {
             nm.cancel(OLD_NOTIFICATION_DEBUG)
             nm.deleteNotificationChannel(OLD_CHANNEL_DEBUG)
         }
@@ -399,7 +400,7 @@ class ReelsBlockerService : AccessibilityService() {
     }
 
     private fun cancelStatusNotification() {
-        guarded("notifica") {
+        guarded("notification") {
             val nm = getSystemService(NotificationManager::class.java)
             nm.cancel(NOTIFICATION_STATUS)
             nm.cancel(OLD_NOTIFICATION_DEBUG)
@@ -413,7 +414,7 @@ class ReelsBlockerService : AccessibilityService() {
         emptySet()
     }
 
-    /** Nessuna eccezione deve uscire dal servizio: farebbe chiudere l'app. */
+    /** No exception may escape the service: it would crash the app. */
     private fun guarded(what: String, block: () -> Unit) {
         try {
             block()
@@ -422,13 +423,13 @@ class ReelsBlockerService : AccessibilityService() {
         }
     }
 
-    // ------------------------------------------------------------------ azioni
+    // ---------------------------------------------------------------- actions
 
     private inner class Actions : BlockActions {
         override fun showOverlay(model: OverlayModel) = overlay.show(model)
         override fun hideOverlay() = overlay.hide()
-        override fun muteAudio() = log.add(LogType.EVENTO, ducker.mute())
-        override fun restoreAudio() = log.add(LogType.EVENTO, ducker.restore())
+        override fun muteAudio() = log.add(LogType.EVENT, ducker.mute())
+        override fun restoreAudio() = log.add(LogType.EVENT, ducker.restore())
         override fun performExit(action: ExitAction) {
             performGlobalAction(if (action == ExitAction.HOME) GLOBAL_ACTION_HOME else GLOBAL_ACTION_BACK)
         }
@@ -442,6 +443,8 @@ class ReelsBlockerService : AccessibilityService() {
     companion object {
         private const val THROTTLE_MS = 250L
         private const val SYSTEM_UI = "com.android.systemui"
+
+        /** Channel id kept from older versions ("stato" = status), so no duplicate channel appears. */
         private const val CHANNEL_STATUS = "stato"
         private const val NOTIFICATION_STATUS = 2
         private const val OLD_CHANNEL_DEBUG = "debug"
@@ -450,7 +453,7 @@ class ReelsBlockerService : AccessibilityService() {
     }
 }
 
-/** Contatori salvati nel repository; il valore restituito è subito disponibile per la schermata. */
+/** Counters saved in the repository; the returned value is available to the block screen at once. */
 private class RepoCounters(
     private val repo: SettingsRepository,
     private val scope: CoroutineScope,

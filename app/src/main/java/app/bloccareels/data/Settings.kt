@@ -1,20 +1,24 @@
 package app.bloccareels.data
 
-/** Disegno della schermata di blocco. */
+/**
+ * Drawing on the block screen. [key] is what gets saved: it keeps the original
+ * Italian values so that settings saved by older versions still load.
+ */
 enum class Illustration(val key: String) {
-    TRAMONTO("tramonto"),
-    TAZZA("tazza"),
-    FOGLIA("foglia"),
+    SUNSET("tramonto"),
+    CUP("tazza"),
+    LEAF("foglia"),
 
-    /** Immagine, GIF o video scelti dall'utente. */
-    PERSONALIZZATO("personalizzato");
+    /** Image, GIF or video picked by the user. */
+    CUSTOM("personalizzato");
 
     companion object {
-        fun fromKey(key: String?): Illustration = entries.firstOrNull { it.key == key } ?: TRAMONTO
+        /** Unknown or missing keys fall back to [SUNSET]. */
+        fun fromKey(key: String?): Illustration = entries.firstOrNull { it.key == key } ?: SUNSET
     }
 }
 
-/** Tipo di media personalizzato. */
+/** Kind of custom media. */
 enum class MediaKind(val key: String) {
     IMAGE("image"),
     GIF("gif"),
@@ -25,10 +29,10 @@ enum class MediaKind(val key: String) {
     }
 }
 
-/** Media scelto dall'utente, copiato nella cartella privata dell'app. */
+/** Media picked by the user, copied into the app's private folder. */
 data class CustomMedia(val path: String, val kind: MediaKind)
 
-/** Identificativi delle app monitorate, uguali al campo "id" di rules.json. */
+/** Ids of the monitored apps, equal to the "id" field in rules.json. */
 object AppIds {
     const val INSTAGRAM = "instagram"
     const val YOUTUBE = "youtube"
@@ -45,8 +49,8 @@ object AppIds {
 }
 
 /**
- * Preferenze dell'utente. Kotlin puro: lo usa anche il controller nei test.
- * I contatori sono già riportati a zero se la data salvata non è quella di oggi.
+ * User preferences. Plain Kotlin: the controller tests use it too.
+ * The counters are already reset to zero if the saved date is not today.
  */
 data class Settings(
     val masterEnabled: Boolean = true,
@@ -56,13 +60,13 @@ data class Settings(
     val continueDelaySeconds: Int = 0,
     val escalatingDelay: Boolean = true,
     val muteAudio: Boolean = true,
-    val illustration: Illustration = Illustration.TRAMONTO,
+    val illustration: Illustration = Illustration.SUNSET,
     val customMedia: CustomMedia? = null,
-    /** Messaggi dei livelli, in ordine: livello 1 = primo blocco, livello 2 = dopo il primo Continua... */
+    /** Level messages, in order: level 1 = first block, level 2 = after the first Continue... */
     val messages: List<String> = emptyList(),
-    /** Media di ogni livello, allineato a [messages]; null = usa quello del livello precedente. */
+    /** Media of each level, aligned with [messages]; null = use the previous level's. */
     val levelMedia: List<CustomMedia?> = emptyList(),
-    /** "" = lingua del sistema, altrimenti "it" o "en". */
+    /** "" = system language, otherwise "it" or "en". */
     val language: String = "",
     val counterDate: String = "",
     val blocksToday: Int = 0,
@@ -70,15 +74,15 @@ data class Settings(
     val exitToday: Int = 0,
 ) {
     /**
-     * Media generale: solo se è stato scelto "personalizzato". Non controlla che il file esista:
-     * se manca, la schermata di blocco non mostra nessuna immagine.
+     * The general custom media: only if "custom" is selected. It does not check that the file
+     * exists: if it is missing, the block screen shows no image.
      */
     val activeCustomMedia: CustomMedia?
-        get() = if (illustration == Illustration.PERSONALIZZATO) customMedia else null
+        get() = if (illustration == Illustration.CUSTOM) customMedia else null
 
     /**
-     * Media del livello [index] (0 = primo): il primo media trovato risalendo verso il livello 1,
-     * altrimenti il media personalizzato generale scelto in "Disegno".
+     * Media of level [index] (0 = first): the first media found going back towards level 1,
+     * otherwise the general custom media picked under "Drawing".
      */
     fun mediaForLevel(index: Int): CustomMedia? {
         for (i in minOf(index, levelMedia.lastIndex) downTo 0) {

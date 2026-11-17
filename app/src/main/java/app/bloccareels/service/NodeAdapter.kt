@@ -5,7 +5,7 @@ import android.view.accessibility.AccessibilityNodeInfo
 import app.bloccareels.detect.UiNode
 import app.bloccareels.detect.UiSnapshot
 
-/** Da AccessibilityNodeInfo a [UiNode]. I campi sono letti subito: il nodo non viene trattenuto. */
+/** From AccessibilityNodeInfo to [UiNode]. Fields are read at once: the node is not kept. */
 class NodeAdapter private constructor(
     override val viewId: String?,
     override val text: String?,
@@ -35,7 +35,7 @@ class NodeAdapter private constructor(
     }
 }
 
-/** Istantanea della finestra applicativa in primo piano. */
+/** Snapshot of the foreground application window. */
 class NodeSnapshot(
     private val root: AccessibilityNodeInfo,
     override val screenHeightPx: Int,

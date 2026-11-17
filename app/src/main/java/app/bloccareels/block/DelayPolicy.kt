@@ -1,22 +1,23 @@
 package app.bloccareels.block
 
-/** Calcolo dell'attesa prima che "Continua" diventi cliccabile. */
+/** How long to wait before "Continue" can be tapped. */
 object DelayPolicy {
-    /** Secondi di attesa per numero di "Continua" consecutivi. */
-    val SCALA = listOf(0, 2, 5, 10, 15, 20, 30)
+    /** Wait in seconds, indexed by the number of consecutive "Continue" taps; the last value repeats. */
+    val ESCALATION_STEPS = listOf(0, 2, 5, 10, 15, 20, 30)
 
-    /** Dopo questo intervallo senza schermata di blocco la sessione finisce. */
+    /** After this long without a block screen the session is over and the count starts again. */
     const val SESSION_GAP_MS: Long = 10 * 60 * 1000L
 
-    fun attesa(base: Int, crescente: Boolean, consecutivi: Int): Int =
-        if (!crescente) base
-        else maxOf(base, SCALA[minOf(consecutivi.coerceAtLeast(0), SCALA.lastIndex)])
+    /** [base] if not [escalating]; otherwise the step for [consecutiveContinues], never below [base]. */
+    fun waitSeconds(base: Int, escalating: Boolean, consecutiveContinues: Int): Int =
+        if (!escalating) base
+        else maxOf(base, ESCALATION_STEPS[minOf(consecutiveContinues.coerceAtLeast(0), ESCALATION_STEPS.lastIndex)])
 
     /**
-     * Restituisce i "Continua" consecutivi da usare per un nuovo blocco:
-     * zero se dall'ultima volta in cui la schermata era visibile sono passati almeno 10 minuti.
+     * Consecutive "Continue" taps to use for a new block: zero if at least [SESSION_GAP_MS]
+     * have passed since the block screen was last visible.
      */
-    fun consecutiviAggiornati(consecutivi: Int, ultimaVisibilitaMs: Long?, adessoMs: Long): Int =
-        if (ultimaVisibilitaMs != null && adessoMs - ultimaVisibilitaMs >= SESSION_GAP_MS) 0
-        else consecutivi
+    fun consecutiveForNewBlock(consecutiveContinues: Int, lastVisibleAtMs: Long?, nowMs: Long): Int =
+        if (lastVisibleAtMs != null && nowMs - lastVisibleAtMs >= SESSION_GAP_MS) 0
+        else consecutiveContinues
 }

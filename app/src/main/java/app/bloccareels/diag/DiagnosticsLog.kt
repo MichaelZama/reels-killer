@@ -5,26 +5,27 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
-enum class LogType { EVENTO, RILEVAMENTO, TRANSIZIONE, ERRORE }
+enum class LogType { EVENT, DETECTION, TRANSITION, ERROR }
 
 data class LogEntry(val timeMs: Long, val type: LogType, val text: String)
 
+/** Live status shown in the diagnostics section. */
 data class DiagStatus(
     val lastPackage: String? = null,
     val lastEventAtMs: Long? = null,
-    val controllerState: String = "INATTIVO",
-    val lastDetection: String = "Nessuno",
+    val controllerState: String = "IDLE",
+    val lastDetection: String = "None",
     val serviceConnected: Boolean = false,
 )
 
-/** Buffer circolare in memoria. Kotlin puro. Non salva mai il contenuto delle schermate. */
+/** In-memory ring buffer. Plain Kotlin. It never stores screen content. */
 class DiagnosticsLog(
     private val capacity: Int = 200,
     private val clock: () -> Long = System::currentTimeMillis,
 ) {
     private val _entries = MutableStateFlow<List<LogEntry>>(emptyList())
 
-    /** La voce più recente è la prima. */
+    /** The most recent entry comes first. */
     val entries: StateFlow<List<LogEntry>> = _entries.asStateFlow()
 
     private val _status = MutableStateFlow(DiagStatus())
@@ -36,7 +37,7 @@ class DiagnosticsLog(
     }
 
     fun error(text: String, t: Throwable? = null) =
-        add(LogType.ERRORE, if (t == null) text else "$text: ${t.javaClass.simpleName} ${t.message.orEmpty()}".trim())
+        add(LogType.ERROR, if (t == null) text else "$text: ${t.javaClass.simpleName} ${t.message.orEmpty()}".trim())
 
     fun updateStatus(transform: (DiagStatus) -> DiagStatus) = _status.update(transform)
 

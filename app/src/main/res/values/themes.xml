@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.BloccaReels" parent="Theme.AppCompat.NoActionBar">
-        <item name="android:windowBackground">@color/sfondo</item>
-        <item name="android:colorBackground">@color/sfondo</item>
-        <item name="android:colorAccent">@color/accento</item>
-        <item name="android:colorPrimary">@color/sfondo</item>
-        <item name="android:statusBarColor">@color/sfondo</item>
-        <item name="android:navigationBarColor">@color/sfondo</item>
-        <item name="android:textColorPrimary">@color/testo</item>
-        <item name="android:textColorSecondary">@color/testo_secondario</item>
+    <style name="Theme.ReelsKiller" parent="Theme.AppCompat.NoActionBar">
+        <item name="android:windowBackground">@color/background</item>
+        <item name="android:colorBackground">@color/background</item>
+        <item name="android:colorAccent">@color/accent</item>
+        <item name="android:colorPrimary">@color/background</item>
+        <item name="android:statusBarColor">@color/background</item>
+        <item name="android:navigationBarColor">@color/background</item>
+        <item name="android:textColorPrimary">@color/text_primary</item>
+        <item name="android:textColorSecondary">@color/text_secondary</item>
     </style>
 </resources>

@@ -6,6 +6,9 @@ import app.bloccareels.block.BlockController
 import app.bloccareels.block.BlockState
 import app.bloccareels.block.Counters
 import app.bloccareels.block.OverlayModel
+import app.bloccareels.data.CustomMedia
+import app.bloccareels.data.Illustration
+import app.bloccareels.data.MediaKind
 import app.bloccareels.data.Settings
 import app.bloccareels.detect.Detection
 import app.bloccareels.detect.ExitAction
@@ -51,9 +54,9 @@ private class FakeCounters : Counters {
 @OptIn(ExperimentalCoroutinesApi::class)
 class BlockControllerTest {
 
-    private val feed = Detection.Feed("instagram", "scheda_reels")
-    private val single = Detection.Single("instagram", "reel_singolo", "pager", fingerprint = 1)
-    private val tiktok = Detection.Feed("tiktok", "tutta_la_app")
+    private val feed = Detection.Feed("instagram", "reels_tab")
+    private val single = Detection.Single("instagram", "single_reel", "pager", fingerprint = 1)
+    private val tiktok = Detection.Feed("tiktok", "whole_app")
 
     private class Env(
         val c: BlockController,
@@ -74,106 +77,106 @@ class BlockControllerTest {
             clock = { testScheduler.currentTime },
             appMeta = { id ->
                 when (id) {
-                    "tiktok" -> AppMeta("Sei su TikTok.", ExitAction.HOME)
-                    else -> AppMeta("Sei nei Reels di Instagram.", ExitAction.BACK)
+                    "tiktok" -> AppMeta("You are on TikTok.", ExitAction.HOME)
+                    else -> AppMeta("You are in Instagram Reels.", ExitAction.BACK)
                 }
             },
         )
         return Env(c, a, k, flow)
     }
 
-    // ------------------------------------------------ transizioni della macchina a stati
+    // ------------------------------------------------------ state machine transitions
 
     @Test
-    fun `INATTIVO + Feed porta a BLOCCATO con schermata, audio muto e contatore`() = runTest {
+    fun `IDLE + Feed goes to BLOCKED with block screen, muted audio and counter`() = runTest {
         val e = env()
         e.c.onDetection(feed)
-        assertEquals(BlockState.BLOCCATO, e.c.state)
+        assertEquals(BlockState.BLOCKED, e.c.state)
         assertTrue(e.a.visible)
         assertTrue(e.a.mutedNow)
         assertEquals(1, e.k.blocks)
-        assertEquals("Sei nei Reels di Instagram.", e.a.shown!!.subtitle)
+        assertEquals("You are in Instagram Reels.", e.a.shown!!.subtitle)
         assertEquals(1, e.a.shown!!.blocksToday)
     }
 
     @Test
-    fun `INATTIVO + Single porta a OSSERVAZIONE senza schermata`() = runTest {
+    fun `IDLE + Single goes to OBSERVING without block screen`() = runTest {
         val e = env()
         e.c.onDetection(single)
-        assertEquals(BlockState.OSSERVAZIONE, e.c.state)
+        assertEquals(BlockState.OBSERVING, e.c.state)
         assertFalse(e.a.visible)
         assertEquals("pager", e.c.observingPagerViewId)
     }
 
     @Test
-    fun `OSSERVAZIONE + swipe porta a BLOCCATO`() = runTest {
+    fun `OBSERVING + swipe goes to BLOCKED`() = runTest {
         val e = env()
         e.c.onDetection(single)
         e.c.onSwipe()
-        assertEquals(BlockState.BLOCCATO, e.c.state)
+        assertEquals(BlockState.BLOCKED, e.c.state)
         assertTrue(e.a.visible)
     }
 
     @Test
-    fun `OSSERVAZIONE + cambio di impronta porta a BLOCCATO`() = runTest {
+    fun `OBSERVING + fingerprint change goes to BLOCKED`() = runTest {
         val e = env()
         e.c.onDetection(single)
-        e.c.onDetection(single) // stesso video
-        assertEquals(BlockState.OSSERVAZIONE, e.c.state)
+        e.c.onDetection(single) // same video
+        assertEquals(BlockState.OBSERVING, e.c.state)
         e.c.onDetection(single.copy(fingerprint = 2))
-        assertEquals(BlockState.BLOCCATO, e.c.state)
+        assertEquals(BlockState.BLOCKED, e.c.state)
     }
 
     @Test
-    fun `OSSERVAZIONE + Feed porta a BLOCCATO`() = runTest {
+    fun `OBSERVING + Feed goes to BLOCKED`() = runTest {
         val e = env()
         e.c.onDetection(single)
         e.c.onDetection(feed)
-        assertEquals(BlockState.BLOCCATO, e.c.state)
+        assertEquals(BlockState.BLOCKED, e.c.state)
     }
 
     @Test
-    fun `OSSERVAZIONE + None torna INATTIVO`() = runTest {
+    fun `OBSERVING + None goes back to IDLE`() = runTest {
         val e = env()
         e.c.onDetection(single)
         e.c.onDetection(Detection.None)
-        assertEquals(BlockState.INATTIVO, e.c.state)
+        assertEquals(BlockState.IDLE, e.c.state)
         assertNull(e.c.observingPagerViewId)
         assertFalse(e.a.visible)
     }
 
     @Test
-    fun `BLOCCATO + Continua porta a TREGUA`() = runTest {
+    fun `BLOCKED + Continue goes to TRUCE`() = runTest {
         val e = env()
         e.c.onDetection(feed)
         e.c.onContinueTapped()
-        assertEquals(BlockState.TREGUA, e.c.state)
+        assertEquals(BlockState.TRUCE, e.c.state)
         assertFalse(e.a.visible)
         assertFalse(e.a.mutedNow)
         assertEquals(1, e.k.continues)
     }
 
     @Test
-    fun `BLOCCATO + Esci torna INATTIVO ed esegue exitAction`() = runTest {
+    fun `BLOCKED + Exit goes back to IDLE and performs exitAction`() = runTest {
         val e = env()
         e.c.onDetection(feed)
         e.c.onExitTapped()
-        assertEquals(BlockState.INATTIVO, e.c.state)
+        assertEquals(BlockState.IDLE, e.c.state)
         assertFalse(e.a.visible)
         assertFalse(e.a.mutedNow)
         assertEquals(listOf(ExitAction.BACK), e.a.exits)
         assertEquals(1, e.k.exits)
         advanceTimeBy(BlockController.EXIT_CHECK_MS + 1)
-        assertEquals(listOf(ExitAction.BACK), e.a.exits) // uscito davvero: niente HOME
+        assertEquals(listOf(ExitAction.BACK), e.a.exits) // really left: no HOME
     }
 
     @Test
-    fun `Esci con rilevamento ancora presente dopo 600 ms esegue HOME`() = runTest {
+    fun `Exit with the detection still there after 600 ms performs HOME`() = runTest {
         val e = env()
         e.c.onDetection(feed)
         e.a.next = feed
         e.c.onExitTapped()
-        // Durante l'attesa i rilevamenti vengono ignorati.
+        // Detections are ignored while waiting.
         e.c.onDetection(feed)
         assertFalse(e.a.visible)
         advanceTimeBy(BlockController.EXIT_CHECK_MS - 1)
@@ -183,7 +186,7 @@ class BlockControllerTest {
     }
 
     @Test
-    fun `TikTok Esci porta alla Home`() = runTest {
+    fun `TikTok Exit goes Home`() = runTest {
         val e = env()
         e.c.onDetection(tiktok)
         e.c.onExitTapped()
@@ -191,160 +194,160 @@ class BlockControllerTest {
     }
 
     @Test
-    fun `un solo None in BLOCCATO non chiude, due consecutivi si`() = runTest {
+    fun `a single None in BLOCKED does not close, two in a row do`() = runTest {
         val e = env()
         e.c.onDetection(feed)
         e.a.next = feed
         e.c.onDetection(Detection.None)
-        assertEquals(BlockState.BLOCCATO, e.c.state)
+        assertEquals(BlockState.BLOCKED, e.c.state)
         assertTrue(e.a.visible)
-        // Il ricontrollo programmato trova ancora i Reels: resta.
+        // The scheduled recheck still finds Reels: it stays.
         advanceTimeBy(BlockController.CONFIRM_NONE_MS + 1)
-        assertEquals(BlockState.BLOCCATO, e.c.state)
+        assertEquals(BlockState.BLOCKED, e.c.state)
 
         e.c.onDetection(Detection.None)
         e.c.onDetection(Detection.None)
-        assertEquals(BlockState.INATTIVO, e.c.state)
+        assertEquals(BlockState.IDLE, e.c.state)
         assertFalse(e.a.visible)
         assertFalse(e.a.mutedNow)
     }
 
     @Test
-    fun `None in BLOCCATO confermato dal ricontrollo chiude anche senza nuovi eventi`() = runTest {
+    fun `None in BLOCKED confirmed by the recheck closes even without new events`() = runTest {
         val e = env()
         e.c.onDetection(feed)
         e.a.next = Detection.None
         e.c.onDetection(Detection.None)
         advanceTimeBy(BlockController.CONFIRM_NONE_MS + 1)
-        assertEquals(BlockState.INATTIVO, e.c.state)
+        assertEquals(BlockState.IDLE, e.c.state)
         assertFalse(e.a.visible)
     }
 
-    // ---------------------------------------------------------------- tregua
+    // ----------------------------------------------------------------- truce
 
     @Test
-    fun `la schermata torna esattamente alla scadenza della tregua se il rilevamento persiste`() = runTest {
+    fun `the block screen comes back exactly when the truce expires if the detection persists`() = runTest {
         val e = env(Settings(messages = listOf("a", "b"), truceSeconds = 5, escalatingDelay = false))
         e.c.onDetection(feed)
         e.c.onContinueTapped()
         e.a.next = feed
-        // I rilevamenti durante la tregua sono ignorati.
+        // Detections during the truce are ignored.
         e.c.onDetection(feed)
         advanceTimeBy(4_999)
         assertFalse(e.a.visible)
-        assertEquals(BlockState.TREGUA, e.c.state)
+        assertEquals(BlockState.TRUCE, e.c.state)
         advanceTimeBy(1)
         runCurrent()
         assertTrue(e.a.visible)
-        assertEquals(BlockState.BLOCCATO, e.c.state)
+        assertEquals(BlockState.BLOCKED, e.c.state)
         assertEquals(2, e.k.blocks)
     }
 
     @Test
-    fun `alla scadenza della tregua un Single vale come Feed`() = runTest {
+    fun `when the truce expires a Single counts as Feed`() = runTest {
         val e = env()
         e.c.onDetection(feed)
         e.c.onContinueTapped()
         e.a.next = single
         advanceTimeBy(3_001)
-        assertEquals(BlockState.BLOCCATO, e.c.state)
+        assertEquals(BlockState.BLOCKED, e.c.state)
     }
 
     @Test
-    fun `nessuna schermata se alla scadenza della tregua il rilevamento e None`() = runTest {
+    fun `no block screen if the detection is None when the truce expires`() = runTest {
         val e = env()
         e.c.onDetection(feed)
         e.c.onContinueTapped()
         e.a.next = Detection.None
         advanceTimeBy(10_000)
-        assertEquals(BlockState.INATTIVO, e.c.state)
+        assertEquals(BlockState.IDLE, e.c.state)
         assertFalse(e.a.visible)
         assertEquals(1, e.k.blocks)
     }
 
-    // ---------------------------------------------------- attesa su Continua
+    // ------------------------------------------------------ wait on Continue
 
     @Test
-    fun `Continua disattivato durante l'attesa non produce nulla`() = runTest {
+    fun `Continue tapped during the wait does nothing`() = runTest {
         val e = env(Settings(messages = listOf("a"), continueDelaySeconds = 5))
         e.c.onDetection(feed)
         assertEquals(5, e.a.shown!!.waitSeconds)
         e.c.onContinueTapped()
-        assertEquals(BlockState.BLOCCATO, e.c.state)
+        assertEquals(BlockState.BLOCKED, e.c.state)
         advanceTimeBy(5_000)
         e.c.onContinueTapped()
-        assertEquals(BlockState.TREGUA, e.c.state)
+        assertEquals(BlockState.TRUCE, e.c.state)
     }
 
     @Test
-    fun `attesa crescente a ogni Continua consecutivo`() = runTest {
+    fun `the wait grows with each consecutive Continue`() = runTest {
         val e = env(Settings(messages = listOf("a", "b"), truceSeconds = 3, escalatingDelay = true))
         e.a.next = feed
-        val attese = mutableListOf<Int>()
+        val waits = mutableListOf<Int>()
         val hint = mutableListOf<Boolean>()
         e.c.onDetection(feed)
         repeat(4) {
             val m = e.a.shown!!
-            attese += m.waitSeconds
+            waits += m.waitSeconds
             hint += m.showEscalationHint
             advanceTimeBy(m.waitSeconds * 1000L)
             e.c.onContinueTapped()
             advanceTimeBy(3_001)
         }
-        assertEquals(listOf(0, 2, 5, 10), attese)
+        assertEquals(listOf(0, 2, 5, 10), waits)
         assertEquals(listOf(false, true, true, true), hint)
     }
 
     @Test
-    fun `Esci non azzera i Continua consecutivi, 10 minuti senza blocchi si`() = runTest {
+    fun `Exit does not reset consecutive Continues, 10 minutes without blocks does`() = runTest {
         val e = env(Settings(messages = listOf("a"), escalatingDelay = true))
         e.a.next = feed
         e.c.onDetection(feed)
         e.c.onContinueTapped()
-        advanceTimeBy(3_001) // torna il blocco, attesa 2 s
+        advanceTimeBy(3_001) // the block comes back, 2 s wait
         assertEquals(2, e.a.shown!!.waitSeconds)
         advanceTimeBy(2_000)
         e.a.next = Detection.None
         e.c.onExitTapped()
         advanceTimeBy(1_000)
         e.c.onDetection(feed)
-        assertEquals(2, e.a.shown!!.waitSeconds) // stessa sessione
+        assertEquals(2, e.a.shown!!.waitSeconds) // same session
         e.c.onExitTapped()
         advanceTimeBy(10 * 60 * 1000L)
         e.c.onDetection(feed)
-        assertEquals(0, e.a.shown!!.waitSeconds) // sessione nuova
+        assertEquals(0, e.a.shown!!.waitSeconds) // new session
     }
 
     // ----------------------------------------------------------------- audio
 
     @Test
-    fun `a ogni muteAudio corrisponde un restoreAudio in tutti i percorsi`() = runTest {
-        val percorsi: List<Pair<String, (Env) -> Unit>> = listOf(
-            "continua" to { e -> e.c.onContinueTapped() },
-            "esci" to { e -> e.c.onExitTapped() },
+    fun `every muteAudio is matched by a restoreAudio on every path`() = runTest {
+        val paths: List<Pair<String, (Env) -> Unit>> = listOf(
+            "continue" to { e -> e.c.onContinueTapped() },
+            "exit" to { e -> e.c.onExitTapped() },
             "none" to { e -> e.c.onDetection(Detection.None); e.c.onDetection(Detection.None) },
-            "app lasciata" to { e -> e.c.onForegroundLeft() },
-            "schermo spento" to { e -> e.c.onScreenOff() },
-            "servizio fermato" to { e -> e.c.onServiceStopped() },
-            "disattivato" to { e -> e.c.onDisabled() },
+            "app left" to { e -> e.c.onForegroundLeft() },
+            "screen off" to { e -> e.c.onScreenOff() },
+            "service stopped" to { e -> e.c.onServiceStopped() },
+            "disabled" to { e -> e.c.onDisabled() },
         )
-        for ((nome, azione) in percorsi) {
+        for ((name, action) in paths) {
             val e = env()
             e.c.onDetection(feed)
-            azione(e)
-            assertEquals("mute in $nome", 1, e.a.muteCount)
-            assertEquals("restore in $nome", 1, e.a.restoreCount)
-            assertFalse("audio ancora muto in $nome", e.a.mutedNow)
-            assertFalse("schermata ancora visibile in $nome", e.a.visible)
+            action(e)
+            assertEquals("mute in $name", 1, e.a.muteCount)
+            assertEquals("restore in $name", 1, e.a.restoreCount)
+            assertFalse("audio still muted in $name", e.a.mutedNow)
+            assertFalse("block screen still visible in $name", e.a.visible)
         }
     }
 
     @Test
-    fun `restoreAudio viene chiamato anche se hideOverlay fallisce`() = runTest {
+    fun `restoreAudio is called even if hideOverlay fails`() = runTest {
         val e = env()
         val failing = object : BlockActions by e.a {
             override fun hideOverlay() {
-                throw IllegalStateException("finestra sparita")
+                throw IllegalStateException("window gone")
             }
         }
         val errors = mutableListOf<String>()
@@ -354,11 +357,11 @@ class BlockControllerTest {
         c.onExitTapped()
         assertEquals(1, e.a.restoreCount)
         assertEquals(1, errors.size)
-        assertEquals(BlockState.INATTIVO, c.state)
+        assertEquals(BlockState.IDLE, c.state)
     }
 
     @Test
-    fun `con l'opzione audio spenta muteAudio non viene mai chiamato`() = runTest {
+    fun `with the audio option off muteAudio is never called`() = runTest {
         val e = env(Settings(messages = listOf("a"), muteAudio = false))
         e.c.onDetection(feed)
         e.c.onExitTapped()
@@ -369,9 +372,9 @@ class BlockControllerTest {
     }
 
     @Test
-    fun `con un video personalizzato non si silenzia l'audio`() = runTest {
-        val video = app.bloccareels.data.CustomMedia("/x/video.mp4", app.bloccareels.data.MediaKind.VIDEO)
-        val e = env(Settings(messages = listOf("a"), muteAudio = true, illustration = app.bloccareels.data.Illustration.PERSONALIZZATO, customMedia = video))
+    fun `with a custom video the audio is not muted`() = runTest {
+        val video = CustomMedia("/x/video.mp4", MediaKind.VIDEO)
+        val e = env(Settings(messages = listOf("a"), muteAudio = true, illustration = Illustration.CUSTOM, customMedia = video))
         e.c.onDetection(feed)
         assertEquals(video, e.a.shown!!.customMedia)
         assertEquals(0, e.a.muteCount)
@@ -380,60 +383,60 @@ class BlockControllerTest {
     }
 
     @Test
-    fun `con un'immagine personalizzata l'audio viene silenziato`() = runTest {
-        val img = app.bloccareels.data.CustomMedia("/x/foto.img", app.bloccareels.data.MediaKind.IMAGE)
-        val e = env(Settings(messages = listOf("a"), muteAudio = true, illustration = app.bloccareels.data.Illustration.PERSONALIZZATO, customMedia = img))
+    fun `with a custom image the audio is muted`() = runTest {
+        val img = CustomMedia("/x/photo.img", MediaKind.IMAGE)
+        val e = env(Settings(messages = listOf("a"), muteAudio = true, illustration = Illustration.CUSTOM, customMedia = img))
         e.c.onDetection(feed)
         assertEquals(1, e.a.muteCount)
         e.c.onExitTapped()
         assertEquals(1, e.a.restoreCount)
     }
 
-    // ------------------------------------- schermo spento e servizio fermato
+    // ------------------------------------------------ screen off and service stopped
 
     @Test
-    fun `schermo spento e servizio fermato riportano a INATTIVO da ogni stato`() = runTest {
-        val preparazioni: List<Pair<String, (Env) -> Unit>> = listOf(
-            "INATTIVO" to { _ -> },
-            "OSSERVAZIONE" to { e -> e.c.onDetection(single) },
-            "BLOCCATO" to { e -> e.c.onDetection(feed) },
-            "TREGUA" to { e -> e.c.onDetection(feed); e.c.onContinueTapped() },
+    fun `screen off and service stopped go back to IDLE from every state`() = runTest {
+        val setups: List<Pair<String, (Env) -> Unit>> = listOf(
+            "IDLE" to { _ -> },
+            "OBSERVING" to { e -> e.c.onDetection(single) },
+            "BLOCKED" to { e -> e.c.onDetection(feed) },
+            "TRUCE" to { e -> e.c.onDetection(feed); e.c.onContinueTapped() },
         )
-        for ((stato, prepara) in preparazioni) {
-            for (spegni in listOf<(BlockController) -> Unit>({ it.onScreenOff() }, { it.onServiceStopped() })) {
+        for ((state, prepare) in setups) {
+            for (stop in listOf<(BlockController) -> Unit>({ it.onScreenOff() }, { it.onServiceStopped() })) {
                 val e = env()
                 e.a.next = feed
-                prepara(e)
-                assertEquals(stato, e.c.state.name)
-                spegni(e.c)
-                assertEquals(BlockState.INATTIVO, e.c.state)
+                prepare(e)
+                assertEquals(state, e.c.state.name)
+                stop(e.c)
+                assertEquals(BlockState.IDLE, e.c.state)
                 assertFalse(e.a.visible)
                 assertFalse(e.a.mutedNow)
-                // Nessun timer residuo deve rimostrare la schermata.
+                // No leftover timer may show the block screen again.
                 advanceTimeBy(60_000)
-                assertFalse("$stato: la schermata non deve tornare", e.a.visible)
+                assertFalse("$state: the block screen must not come back", e.a.visible)
             }
         }
     }
 
-    // -------------------------------------------------------------- messaggi
+    // ---------------------------------------------------------------- levels
 
     @Test
-    fun `il livello segue i Continua consecutivi e resta sull'ultimo`() = runTest {
+    fun `the level follows consecutive Continues and stays on the last one`() = runTest {
         val e = env(Settings(messages = listOf("a", "b", "c"), escalatingDelay = false))
         e.a.next = feed
-        val visti = mutableListOf<String>()
+        val seen = mutableListOf<String>()
         e.c.onDetection(feed)
         repeat(5) {
-            visti += e.a.shown!!.message
+            seen += e.a.shown!!.message
             e.c.onContinueTapped()
             advanceTimeBy(3_001)
         }
-        assertEquals(listOf("a", "b", "c", "c", "c"), visti)
+        assertEquals(listOf("a", "b", "c", "c", "c"), seen)
     }
 
     @Test
-    fun `dopo 10 minuti senza blocchi si riparte dal livello 1`() = runTest {
+    fun `after 10 minutes without blocks it starts again from level 1`() = runTest {
         val e = env(Settings(messages = listOf("a", "b"), escalatingDelay = false))
         e.a.next = feed
         e.c.onDetection(feed)
@@ -448,9 +451,9 @@ class BlockControllerTest {
     }
 
     @Test
-    fun `un livello senza media usa quello del livello precedente`() = runTest {
-        val m1 = app.bloccareels.data.CustomMedia("/x/1.gif", app.bloccareels.data.MediaKind.GIF)
-        val m3 = app.bloccareels.data.CustomMedia("/x/3.img", app.bloccareels.data.MediaKind.IMAGE)
+    fun `a level without media uses the previous level's`() = runTest {
+        val m1 = CustomMedia("/x/1.gif", MediaKind.GIF)
+        val m3 = CustomMedia("/x/3.img", MediaKind.IMAGE)
         val s = Settings(
             messages = listOf("a", "b", "c", "d"),
             levelMedia = listOf(m1, null, m3, null),
@@ -458,55 +461,55 @@ class BlockControllerTest {
         )
         val e = env(s)
         e.a.next = feed
-        val visti = mutableListOf<app.bloccareels.data.CustomMedia?>()
+        val seen = mutableListOf<CustomMedia?>()
         e.c.onDetection(feed)
         repeat(5) {
-            visti += e.a.shown!!.customMedia
+            seen += e.a.shown!!.customMedia
             e.c.onContinueTapped()
             advanceTimeBy(3_001)
         }
-        assertEquals(listOf(m1, m1, m3, m3, m3), visti)
+        assertEquals(listOf(m1, m1, m3, m3, m3), seen)
     }
 
     @Test
-    fun `senza media nei livelli si usa il media generale oppure il disegno`() = runTest {
-        val generale = app.bloccareels.data.CustomMedia("/x/g.img", app.bloccareels.data.MediaKind.IMAGE)
-        val conGenerale = Settings(
+    fun `without level media the general media or the drawing is used`() = runTest {
+        val general = CustomMedia("/x/g.img", MediaKind.IMAGE)
+        val withGeneral = Settings(
             messages = listOf("a"),
-            illustration = app.bloccareels.data.Illustration.PERSONALIZZATO,
-            customMedia = generale,
+            illustration = Illustration.CUSTOM,
+            customMedia = general,
         )
-        assertEquals(generale, conGenerale.mediaForLevel(0))
-        assertEquals(null, Settings(messages = listOf("a"), customMedia = generale).mediaForLevel(3))
+        assertEquals(general, withGeneral.mediaForLevel(0))
+        assertEquals(null, Settings(messages = listOf("a"), customMedia = general).mediaForLevel(3))
     }
 
-    // ------------------------------------- isIdle (il servizio scarta gli eventi delle altre app)
+    // --------------------------------- isIdle (the service drops the other apps' events)
 
     @Test
-    fun `isIdle e vero solo quando non c'e niente in corso`() = runTest {
+    fun `isIdle is true only when nothing is in progress`() = runTest {
         val e = env()
         assertTrue(e.c.isIdle)
 
         e.c.onDetection(single)
-        assertFalse("OSSERVAZIONE", e.c.isIdle)
+        assertFalse("OBSERVING", e.c.isIdle)
         e.c.onDetection(Detection.None)
         assertTrue(e.c.isIdle)
 
         e.c.onDetection(feed)
-        assertFalse("BLOCCATO", e.c.isIdle)
+        assertFalse("BLOCKED", e.c.isIdle)
         e.c.onContinueTapped()
-        assertEquals(BlockState.TREGUA, e.c.state)
-        assertFalse("TREGUA", e.c.isIdle)
+        assertEquals(BlockState.TRUCE, e.c.state)
+        assertFalse("TRUCE", e.c.isIdle)
         e.c.onForegroundLeft()
         assertTrue(e.c.isIdle)
     }
 
     @Test
-    fun `dopo Esci isIdle resta falso finche non finisce il controllo`() = runTest {
+    fun `after Exit isIdle stays false until the check is over`() = runTest {
         val e = env()
         e.c.onDetection(feed)
         e.c.onExitTapped()
-        assertEquals(BlockState.INATTIVO, e.c.state)
+        assertEquals(BlockState.IDLE, e.c.state)
         assertFalse(e.c.isIdle)
         advanceTimeBy(BlockController.EXIT_CHECK_MS + 1)
         assertTrue(e.c.isIdle)

@@ -4,14 +4,14 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
-// La firma release legge percorso e password da variabili d'ambiente.
-// Se mancano (build locale o secrets non ancora configurati) si usa la chiave di debug.
+// Release signing reads the keystore path and passwords from environment variables.
+// If they are missing (local build, or secrets not configured yet) the debug key is used.
 val keystorePath: String? = System.getenv("KEYSTORE_PATH")?.takeIf { it.isNotBlank() && file(it).exists() && file(it).length() > 0 }
 
-// Sui tag di release la CI imposta REQUIRE_RELEASE_SIGNING=true: senza keystore valido ci si ferma,
-// perché un APK firmato con la chiave di debug non si installa sopra le versioni pubblicate.
+// On release tags CI sets REQUIRE_RELEASE_SIGNING=true: without a valid keystore the build stops,
+// because an APK signed with the debug key does not install over the published versions.
 if (System.getenv("REQUIRE_RELEASE_SIGNING") == "true" && keystorePath == null) {
-    throw GradleException("REQUIRE_RELEASE_SIGNING=true ma il keystore di release (KEYSTORE_PATH) manca o è vuoto.")
+    throw GradleException("REQUIRE_RELEASE_SIGNING=true but the release keystore (KEYSTORE_PATH) is missing or empty.")
 }
 
 android {
@@ -22,7 +22,7 @@ android {
         applicationId = "app.bloccareels"
         minSdk = 26
         targetSdk = 36
-        // versionCode cresce a ogni build di CI, così ogni APK si installa sopra il precedente.
+        // versionCode grows with every CI build, so each APK installs over the previous one.
         versionCode = System.getenv("GITHUB_RUN_NUMBER")?.toIntOrNull() ?: 1
         versionName = "1.3.2"
     }

@@ -4,7 +4,7 @@ import android.content.Context
 import android.media.AudioManager
 import java.io.File
 
-/** Il flusso multimediale del telefono. È un'interfaccia così [AudioDucker] si prova senza Android. */
+/** The phone's media stream. It is an interface so that [AudioDucker] can be tested without Android. */
 interface MusicStream {
     val isMuted: Boolean
     fun setMuted(muted: Boolean)
@@ -23,21 +23,21 @@ class SystemMusicStream(private val am: AudioManager) : MusicStream {
 }
 
 /**
- * Silenzia e ripristina il flusso multimediale.
- * Ogni metodo restituisce una riga per il log di diagnostica.
+ * Mutes and restores the media stream.
+ * Every method returns a line for the diagnostics log.
  *
- * Il muto è un'impostazione di sistema: se il processo muore mentre l'audio è silenziato
- * (chiusura forzata, sistema che libera memoria) può restare muto. Per questo, finché l'audio
- * è silenziato da noi, su disco c'è il file [marker]: all'avvio del processo
- * [recoverAfterProcessDeath] lo trova e riattiva l'audio.
+ * Mute is a system setting: if the process dies while the audio is muted (force stop,
+ * the system reclaiming memory) it can stay muted. That is why, as long as we keep the
+ * audio muted, the [marker] file exists on disk: when the process starts,
+ * [recoverAfterProcessDeath] finds it and unmutes the audio.
  */
 class AudioDucker(private val stream: MusicStream, private val marker: File) {
     private var mutedByUs = false
 
     fun mute(): String {
-        if (mutedByUs) return "Audio: già silenziato da Reels Killer"
-        if (stream.isMuted) return "Audio: era già muto, non lo tocco"
-        // Prima il segno su disco, poi il muto: se il processo muore in mezzo, al riavvio l'audio torna.
+        if (mutedByUs) return "Audio: already muted by Reels Killer"
+        if (stream.isMuted) return "Audio: already muted, left alone"
+        // Marker on disk first, then mute: if the process dies in between, the audio comes back on restart.
         val marked = try {
             marker.writeText("")
             true
@@ -46,32 +46,33 @@ class AudioDucker(private val stream: MusicStream, private val marker: File) {
         }
         stream.setMuted(true)
         mutedByUs = true
-        val note = if (marked) "" else ", segno su disco non scritto"
-        return "Audio silenziato (muto ora: ${stream.isMuted}$note)"
+        val note = if (marked) "" else ", marker not written"
+        return "Audio muted (muted now: ${stream.isMuted}$note)"
     }
 
     fun restore(): String {
-        if (!mutedByUs) return "Audio: niente da ripristinare"
+        if (!mutedByUs) return "Audio: nothing to restore"
         mutedByUs = false
         stream.setMuted(false)
         marker.delete()
-        return "Audio ripristinato (muto ora: ${stream.isMuted})"
+        return "Audio restored (muted now: ${stream.isMuted})"
     }
 
     /**
-     * Da chiamare all'avvio del processo, prima di qualunque [mute]. Se il segno è rimasto, la sessione
-     * precedente si è interrotta con l'audio silenziato da noi e va riattivato.
-     * Restituisce null se non c'era niente da fare.
+     * Call when the process starts, before any [mute]. If the marker is still there, the previous
+     * session ended while we had muted the audio, and it must be unmuted.
+     * Returns null if there was nothing to do.
      */
     fun recoverAfterProcessDeath(): String? {
         if (!marker.exists()) return null
         marker.delete()
-        if (!stream.isMuted) return "Audio: sessione precedente interrotta, ma l'audio era già attivo"
+        if (!stream.isMuted) return "Audio: previous session interrupted, but the audio was already on"
         stream.setMuted(false)
-        return "Audio riattivato: era rimasto silenziato da una sessione interrotta (muto ora: ${stream.isMuted})"
+        return "Audio unmuted: it was left muted by an interrupted session (muted now: ${stream.isMuted})"
     }
 
     companion object {
+        /** The file name is kept from older versions, so a marker they left behind is still found. */
         fun markerFile(context: Context): File = File(context.noBackupFilesDir, "audio_silenziato")
     }
 }

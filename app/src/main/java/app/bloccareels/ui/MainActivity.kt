@@ -4,22 +4,20 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.os.Build
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.runtime.LaunchedEffect
-import androidx.core.content.ContextCompat
-import app.bloccareels.ServiceCommand
 import android.os.Bundle
-import androidx.appcompat.app.AppCompatActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -27,10 +25,13 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.bloccareels.AppContainer
+import app.bloccareels.ServiceCommand
 import app.bloccareels.container
+import app.bloccareels.data.Locales
 import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
@@ -42,11 +43,11 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         val c = applicationContext.container
         setContent {
-            BloccaTheme {
+            ReelsKillerTheme {
                 Box(
                     Modifier
                         .fillMaxSize()
-                        .background(BrColors.Sfondo)
+                        .background(AppColors.Background)
                         .safeDrawingPadding(),
                 ) {
                     AppRoot(c)
@@ -74,11 +75,11 @@ private fun AppRoot(c: AppContainer) {
 
     if (!loaded) return
 
-    // Se la lingua è stata cambiata dalle impostazioni di sistema (Android 13+), la salviamo
-    // perché la usino anche servizio e notifica.
+    // If the language was changed from the system settings (Android 13+), save it
+    // so that the service and the notification use it too.
     LaunchedEffect(Unit) {
-        val ui = app.bloccareels.data.Locales.currentUiTag()
-        if (ui != settings.language && ui in app.bloccareels.data.Locales.SUPPORTED) c.settings.setLanguage(ui)
+        val ui = Locales.currentUiTag()
+        if (ui != settings.language && ui in Locales.SUPPORTED) c.settings.setLanguage(ui)
     }
 
     var screenName by rememberSaveable { mutableStateOf(Screen.SETTINGS.name) }
@@ -95,7 +96,7 @@ private fun AppRoot(c: AppContainer) {
 
     BackHandler(enabled = screen != Screen.SETTINGS) { screenName = Screen.SETTINGS.name }
 
-    // Permesso per la notifica "attivo" (Android 13+): chiesto una sola volta.
+    // Permission for the "is on" notification (Android 13+): asked only once.
     val notifLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
         c.serviceCommands.tryEmit(ServiceCommand.RefreshNotification)
     }

@@ -93,9 +93,9 @@
     <string name="messages_label">Levels and messages</string>
     <string name="messages_count">%1$d levels</string>
     <string name="illustration_label">Picture</string>
-    <string name="ill_tramonto">Sunset</string>
-    <string name="ill_tazza">Cup</string>
-    <string name="ill_foglia">Leaf</string>
+    <string name="ill_sunset">Sunset</string>
+    <string name="ill_cup">Cup</string>
+    <string name="ill_leaf">Leaf</string>
     <string name="ill_custom">Yours</string>
     <string name="media_hint">With \"Yours\" you can use your own image, GIF or short video with sound (up to %1$d seconds).</string>
     <string name="media_change">Change</string>
@@ -144,10 +144,10 @@
     <string name="diag_no_tree">No tree exported yet. Use \"Export tree\" first.</string>
     <string name="diag_versions">App %1$s · rules version %2$d</string>
     <string name="diag_share_title">Share</string>
-    <string name="log_type_evento">event</string>
-    <string name="log_type_rilevamento">detection</string>
-    <string name="log_type_transizione">transition</string>
-    <string name="log_type_errore">error</string>
+    <string name="log_type_event">event</string>
+    <string name="log_type_detection">detection</string>
+    <string name="log_type_transition">transition</string>
+    <string name="log_type_error">error</string>
     <string name="diag_export_note">To update the rules: tap the button, open the screen to analyse (e.g. Shorts) within 10 seconds and wait. Then come back and use \"Share last tree\".</string>
     <string name="diag_export_button">Export tree in %1$d s</string>
     <string name="diag_export_not_connected">The service is not connected: enable it in accessibility settings.</string>

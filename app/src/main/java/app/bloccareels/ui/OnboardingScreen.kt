@@ -40,7 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.bloccareels.R
 
-/** Primo avvio in tre passaggi. */
+/** First run, in three steps. */
 @Composable
 fun OnboardingScreen(serviceOn: Boolean, batteryOk: Boolean, onFinish: () -> Unit) {
     val context = LocalContext.current
@@ -56,23 +56,23 @@ fun OnboardingScreen(serviceOn: Boolean, batteryOk: Boolean, onFinish: () -> Uni
     ) {
         Text(
             stringResource(R.string.onb_step, step + 1, total),
-            color = BrColors.TestoSecondario,
+            color = AppColors.TextSecondary,
             fontSize = 13.sp,
         )
         Spacer(Modifier.height(32.dp))
         Image(
             painter = painterResource(
                 when (step) {
-                    0 -> R.drawable.ill_foglia
-                    1 -> R.drawable.ill_tazza
-                    else -> R.drawable.ill_tramonto
+                    0 -> R.drawable.ill_leaf
+                    1 -> R.drawable.ill_cup
+                    else -> R.drawable.ill_sunset
                 },
             ),
             contentDescription = null,
             modifier = Modifier
                 .size(160.dp)
                 .clip(CircleShape)
-                .background(BrColors.Superficie)
+                .background(AppColors.Surface)
                 .padding(24.dp),
         )
         Spacer(Modifier.height(32.dp))
@@ -84,7 +84,7 @@ fun OnboardingScreen(serviceOn: Boolean, batteryOk: Boolean, onFinish: () -> Uni
         }
         Text(
             stringResource(title),
-            color = BrColors.Testo,
+            color = AppColors.TextPrimary,
             fontSize = 22.sp,
             fontWeight = FontWeight.Medium,
             textAlign = TextAlign.Center,
@@ -93,7 +93,7 @@ fun OnboardingScreen(serviceOn: Boolean, batteryOk: Boolean, onFinish: () -> Uni
         Spacer(Modifier.height(12.dp))
         Text(
             stringResource(text),
-            color = BrColors.TestoSecondario,
+            color = AppColors.TextSecondary,
             fontSize = 15.sp,
             textAlign = TextAlign.Center,
         )
@@ -108,14 +108,14 @@ fun OnboardingScreen(serviceOn: Boolean, batteryOk: Boolean, onFinish: () -> Uni
                     Spacer(Modifier.height(16.dp))
                     Text(
                         stringResource(R.string.onb2_restricted),
-                        color = BrColors.TestoSecondario,
+                        color = AppColors.TextSecondary,
                         fontSize = 13.sp,
                         textAlign = TextAlign.Center,
                     )
                     TextButton(
                         onClick = { SystemStatus.openAppInfo(context) },
                         modifier = Modifier.heightIn(min = 48.dp),
-                    ) { Text(stringResource(R.string.onb2_open_app_info), color = BrColors.Accento) }
+                    ) { Text(stringResource(R.string.onb2_open_app_info), color = AppColors.Accent) }
                 }
             }
             2 -> {
@@ -128,14 +128,14 @@ fun OnboardingScreen(serviceOn: Boolean, batteryOk: Boolean, onFinish: () -> Uni
                     Spacer(Modifier.height(16.dp))
                     Text(
                         stringResource(R.string.xiaomi_autostart_note),
-                        color = BrColors.TestoSecondario,
+                        color = AppColors.TextSecondary,
                         fontSize = 13.sp,
                         textAlign = TextAlign.Center,
                     )
                     TextButton(
                         onClick = { SystemStatus.openAutostartSettings(context) },
                         modifier = Modifier.heightIn(min = 48.dp),
-                    ) { Text(stringResource(R.string.xiaomi_autostart_button), color = BrColors.Accento) }
+                    ) { Text(stringResource(R.string.xiaomi_autostart_button), color = AppColors.Accent) }
                 }
             }
         }
@@ -145,7 +145,7 @@ fun OnboardingScreen(serviceOn: Boolean, batteryOk: Boolean, onFinish: () -> Uni
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             if (step > 0) {
                 TextButton(onClick = { step-- }, modifier = Modifier.heightIn(min = 48.dp)) {
-                    Text(stringResource(R.string.back), color = BrColors.TestoSecondario)
+                    Text(stringResource(R.string.back), color = AppColors.TextSecondary)
                 }
             } else {
                 Spacer(Modifier.width(1.dp))
@@ -164,7 +164,7 @@ fun OnboardingScreen(serviceOn: Boolean, batteryOk: Boolean, onFinish: () -> Uni
                             else -> R.string.onb_next
                         },
                     ),
-                    color = BrColors.Testo,
+                    color = AppColors.TextPrimary,
                 )
             }
         }
@@ -176,7 +176,7 @@ private fun DoneLine(text: String) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Image(painterResource(R.drawable.ic_check), contentDescription = null, modifier = Modifier.size(22.dp))
         Spacer(Modifier.width(8.dp))
-        Text(text, color = BrColors.Testo, fontSize = 15.sp)
+        Text(text, color = AppColors.TextPrimary, fontSize = 15.sp)
     }
 }
 
@@ -188,7 +188,7 @@ fun PrimaryButton(text: String, modifier: Modifier = Modifier, onClick: () -> Un
             .fillMaxWidth()
             .height(56.dp),
         shape = CircleShape,
-        colors = ButtonDefaults.buttonColors(containerColor = BrColors.Accento, contentColor = BrColors.SuAccento),
+        colors = ButtonDefaults.buttonColors(containerColor = AppColors.Accent, contentColor = AppColors.OnAccent),
     ) {
         Text(text, fontSize = 17.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
     }

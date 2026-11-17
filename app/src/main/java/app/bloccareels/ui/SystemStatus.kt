@@ -1,17 +1,19 @@
 package app.bloccareels.ui
 
+import android.annotation.SuppressLint
 import android.content.ActivityNotFoundException
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.PowerManager
 import android.provider.Settings
 import android.widget.Toast
 import app.bloccareels.R
 import app.bloccareels.service.ReelsBlockerService
 
-/** Stato del sistema e scorciatoie verso le schermate di sistema. */
+/** System status and shortcuts to the system screens. */
 object SystemStatus {
 
     fun isServiceEnabled(context: Context): Boolean {
@@ -30,7 +32,7 @@ object SystemStatus {
     fun openAppInfo(context: Context) =
         start(context, Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${context.packageName}")))
 
-    @android.annotation.SuppressLint("BatteryLife")
+    @SuppressLint("BatteryLife")
     fun requestIgnoreBatteryOptimizations(context: Context) {
         val direct = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:${context.packageName}"))
         if (!start(context, direct, toastOnFailure = false)) {
@@ -38,14 +40,14 @@ object SystemStatus {
         }
     }
 
-    /** Xiaomi, Redmi e POCO (MIUI / HyperOS). */
+    /** Xiaomi, Redmi and POCO (MIUI / HyperOS). */
     fun isXiaomi(): Boolean =
-        android.os.Build.MANUFACTURER.lowercase() in setOf("xiaomi", "redmi", "poco")
+        Build.MANUFACTURER.lowercase() in setOf("xiaomi", "redmi", "poco")
 
     /**
-     * Apre la pagina "Avvio automatico" di MIUI/HyperOS. Senza questo permesso il sistema
-     * non riavvia il servizio dopo una chiusura o un aggiornamento. Se la pagina non esiste
-     * si ripiega sulle informazioni dell'app.
+     * Opens the MIUI/HyperOS "Autostart" page. Without this permission the system does not
+     * restart the service after it is closed or updated. If the page does not exist,
+     * it falls back to the app info.
      */
     fun openAutostartSettings(context: Context) {
         val candidates = listOf(

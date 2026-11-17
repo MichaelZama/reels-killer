@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Niente android:packageNames (serve vedere anche le altre app) e niente isAccessibilityTool. -->
+<!-- No android:packageNames (the other apps must be seen too) and no isAccessibilityTool. -->
 <accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
     android:accessibilityEventTypes="typeWindowStateChanged|typeWindowContentChanged|typeViewScrolled"
     android:accessibilityFeedbackType="feedbackGeneric"

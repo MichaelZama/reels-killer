@@ -7,6 +7,7 @@ import android.graphics.ImageDecoder
 import android.graphics.Outline
 import android.graphics.SurfaceTexture
 import android.graphics.drawable.AnimatedImageDrawable
+import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.media.AudioAttributes
 import android.media.AudioFocusRequest
@@ -29,8 +30,8 @@ import kotlinx.coroutines.withContext
 import java.io.File
 
 /**
- * Mostra un'immagine, una GIF animata o un video in loop con audio dentro la schermata di blocco.
- * Il video chiede il focus audio temporaneo: la maggior parte delle app sotto si mette in pausa.
+ * Shows an image, an animated GIF or a looping video with sound inside the block screen.
+ * The video requests transient audio focus: most apps underneath pause.
  */
 class CustomMediaView(
     private val container: FrameLayout,
@@ -73,7 +74,7 @@ class CustomMediaView(
         }
     }
 
-    /** Ferma video e animazioni, libera il player e restituisce il focus audio. */
+    /** Stops video and animations, releases the player and gives the audio focus back. */
     fun release() {
         loadJob?.cancel()
         loadJob = null
@@ -95,7 +96,7 @@ class CustomMediaView(
         container.visibility = View.GONE
     }
 
-    // ---------------------------------------------------------------- immagini
+    // ------------------------------------------------------------------ images
 
     private fun showImage(path: String, animated: Boolean) {
         image.visibility = View.VISIBLE
@@ -103,7 +104,7 @@ class CustomMediaView(
             val drawable: Drawable? = try {
                 withContext(Dispatchers.IO) { decode(path, animated) }
             } catch (e: Exception) {
-                onError("lettura immagine", e)
+                onError("image decoding", e)
                 null
             }
             if (drawable == null) {
@@ -130,14 +131,14 @@ class CustomMediaView(
                 if (!animated) decoder.allocator = ImageDecoder.ALLOCATOR_SOFTWARE
             }
         }
-        // Android 8: le GIF restano ferme sul primo fotogramma.
+        // Android 8: GIFs stay on their first frame.
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
         BitmapFactory.decodeFile(path, bounds)
         var sample = 1
         while (maxOf(bounds.outWidth, bounds.outHeight) / (sample * 2) >= max) sample *= 2
         val bmp: Bitmap = BitmapFactory.decodeFile(path, BitmapFactory.Options().apply { inSampleSize = sample })
             ?: return null
-        return android.graphics.drawable.BitmapDrawable(context.resources, bmp)
+        return BitmapDrawable(context.resources, bmp)
     }
 
     // ------------------------------------------------------------------- video
@@ -181,18 +182,18 @@ class CustomMediaView(
                     mp.start()
                 }
                 setOnErrorListener { _, what, extra ->
-                    onError("riproduzione video", IllegalStateException("errore $what/$extra"))
+                    onError("video playback", IllegalStateException("error $what/$extra"))
                     true
                 }
                 prepareAsync()
             }
         } catch (e: Exception) {
-            onError("avvio video", e)
+            onError("video start", e)
             release()
         }
     }
 
-    /** Adatta la TextureView alle proporzioni del video, senza superare l'altezza massima. */
+    /** Fits the TextureView to the video's aspect ratio, without exceeding the maximum height. */
     private fun fitVideo(w: Int, h: Int) {
         if (w <= 0 || h <= 0) return
         val density = context.resources.displayMetrics.density
@@ -218,7 +219,7 @@ class CustomMediaView(
         try {
             audioManager.requestAudioFocus(req)
         } catch (e: Exception) {
-            onError("focus audio", e)
+            onError("audio focus", e)
         }
     }
 

@@ -1,6 +1,6 @@
 package app.bloccareels.detect
 
-/** Vista astratta della schermata in primo piano. Nessuna dipendenza da Android. */
+/** Abstract view of the foreground screen. No Android dependency. */
 interface UiSnapshot {
     val packageName: String
     val screenHeightPx: Int
@@ -8,15 +8,15 @@ interface UiSnapshot {
     fun walk(maxNodes: Int): Sequence<UiNode>
 
     /**
-     * Impronta del video corrente: hash dei primi tre testi non vuoti
-     * dei discendenti del contenitore [viewId]. Null se non calcolabile.
-     * Non viene mai salvata né registrata nel log.
+     * Fingerprint of the current video: hash of the first three non-empty texts
+     * among the descendants of the [viewId] container. Null if it cannot be computed.
+     * It is never saved or logged.
      */
     fun fingerprint(viewId: String): Int? = null
 }
 
 interface UiNode {
-    /** Parte dopo ":id/". */
+    /** The part after ":id/". */
     val viewId: String?
     val text: String?
     val contentDescription: String?
@@ -26,6 +26,7 @@ interface UiNode {
     val heightPx: Int
 }
 
+/** Result of evaluating the rules on the foreground screen. */
 sealed interface Detection {
     data object None : Detection
     data class Feed(val appId: String, val rule: String) : Detection
@@ -33,14 +34,14 @@ sealed interface Detection {
         val appId: String,
         val rule: String,
         val pagerViewId: String?,
-        /** Impronta del video: non va mai nel log, vedi [describe]. */
+        /** Video fingerprint: it never goes into the log, see [describe]. */
         val fingerprint: Int? = null,
     ) : Detection
 }
 
-/** Descrizione leggibile per la diagnostica, senza l'impronta. */
+/** Readable description for diagnostics, without the fingerprint. */
 fun Detection.describe(): String = when (this) {
-    Detection.None -> "Nessuno"
-    is Detection.Feed -> "Sezione · $appId · $rule"
-    is Detection.Single -> "Singolo · $appId · $rule"
+    Detection.None -> "None"
+    is Detection.Feed -> "Feed · $appId · $rule"
+    is Detection.Single -> "Single · $appId · $rule"
 }

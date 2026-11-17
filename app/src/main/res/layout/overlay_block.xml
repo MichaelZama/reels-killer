@@ -4,7 +4,7 @@
     android:id="@+id/overlay_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/sfondo"
+    android:background="@color/background"
     android:clickable="true"
     android:focusable="false"
     android:soundEffectsEnabled="false">
@@ -32,7 +32,7 @@
                 android:importantForAccessibility="no"
                 android:padding="28dp"
                 android:scaleType="fitCenter"
-                tools:src="@drawable/ill_tramonto" />
+                tools:src="@drawable/ill_sunset" />
 
             <FrameLayout
                 android:id="@+id/overlay_media"
@@ -76,9 +76,9 @@
                 android:fontFamily="sans-serif-medium"
                 android:gravity="center"
                 android:maxLines="2"
-                android:textColor="@color/testo"
+                android:textColor="@color/text_primary"
                 android:textSize="22sp"
-                tools:text="Era quello che volevi fare?" />
+                tools:text="Is this what you wanted to do?" />
 
             <TextView
                 android:id="@+id/overlay_subtitle"
@@ -88,9 +88,9 @@
                 android:layout_marginTop="8dp"
                 android:layout_marginEnd="32dp"
                 android:gravity="center"
-                android:textColor="@color/testo_secondario"
+                android:textColor="@color/text_secondary"
                 android:textSize="15sp"
-                tools:text="Sei nei Reels di Instagram." />
+                tools:text="You are in Instagram Reels." />
 
             <Space
                 android:layout_width="match_parent"
@@ -107,7 +107,7 @@
                 android:focusable="true"
                 android:gravity="center"
                 android:text="@string/overlay_exit"
-                android:textColor="@color/su_accento"
+                android:textColor="@color/on_accent"
                 android:textSize="17sp"
                 android:textStyle="bold" />
 
@@ -139,7 +139,7 @@
                     android:layout_height="wrap_content"
                     android:importantForAccessibility="no"
                     android:text="@string/overlay_continue"
-                    android:textColor="@color/testo_secondario"
+                    android:textColor="@color/text_secondary"
                     android:textSize="15sp" />
             </LinearLayout>
 
@@ -151,9 +151,9 @@
                 android:layout_marginTop="20dp"
                 android:layout_marginEnd="32dp"
                 android:gravity="center"
-                android:textColor="@color/testo_secondario"
+                android:textColor="@color/text_secondary"
                 android:textSize="13sp"
-                tools:text="3ª volta oggi" />
+                tools:text="Time 3 today" />
         </LinearLayout>
     </ScrollView>
 </FrameLayout>

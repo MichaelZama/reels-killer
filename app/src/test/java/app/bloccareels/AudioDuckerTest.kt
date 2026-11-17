@@ -10,7 +10,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 
-// La proprietà non si chiama "muted": il suo setter JVM (setMuted) andrebbe in conflitto con MusicStream.setMuted.
+// The property is not called "muted": its JVM setter (setMuted) would clash with MusicStream.setMuted.
 private class FakeStream(var mutedNow: Boolean = false) : MusicStream {
     override val isMuted: Boolean get() = mutedNow
     override fun setMuted(muted: Boolean) { mutedNow = muted }
@@ -24,7 +24,7 @@ class AudioDuckerTest {
     private fun marker() = tmp.root.resolve("audio_silenziato")
 
     @Test
-    fun `mute lascia il segno su disco e restore lo toglie`() {
+    fun `mute leaves the marker on disk and restore removes it`() {
         val stream = FakeStream()
         val d = AudioDucker(stream, marker())
 
@@ -38,21 +38,21 @@ class AudioDuckerTest {
     }
 
     @Test
-    fun `audio gia muto dall'utente non viene toccato e non lascia segni`() {
+    fun `audio already muted by the user is left alone and leaves no marker`() {
         val stream = FakeStream(mutedNow = true)
         val d = AudioDucker(stream, marker())
 
         d.mute()
         assertFalse(marker().exists())
         d.restore()
-        assertTrue("il muto dell'utente resta", stream.mutedNow)
+        assertTrue("the user's mute stays", stream.mutedNow)
     }
 
     @Test
-    fun `dopo la morte del processo il nuovo avvio riattiva l'audio`() {
+    fun `after the process dies the next start unmutes the audio`() {
         val stream = FakeStream()
         AudioDucker(stream, marker()).mute()
-        // Il processo muore qui: restore() non viene mai chiamato.
+        // The process dies here: restore() is never called.
 
         val result = AudioDucker(stream, marker()).recoverAfterProcessDeath()
         assertNotNull(result)
@@ -61,7 +61,7 @@ class AudioDuckerTest {
     }
 
     @Test
-    fun `segno rimasto ma audio gia attivo, il segno si cancella e basta`() {
+    fun `marker left but audio already on, the marker is just deleted`() {
         val stream = FakeStream()
         marker().writeText("")
 
@@ -71,7 +71,7 @@ class AudioDuckerTest {
     }
 
     @Test
-    fun `senza segno il ripristino non tocca il muto dell'utente`() {
+    fun `without a marker the recovery does not touch the user's mute`() {
         val stream = FakeStream(mutedNow = true)
 
         assertNull(AudioDucker(stream, marker()).recoverAfterProcessDeath())

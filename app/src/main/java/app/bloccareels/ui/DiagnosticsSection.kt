@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -24,6 +26,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
@@ -37,10 +40,8 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.bloccareels.AppContainer
-import app.bloccareels.ServiceCommand
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import app.bloccareels.R
+import app.bloccareels.ServiceCommand
 import app.bloccareels.data.Settings
 import app.bloccareels.diag.LogEntry
 import app.bloccareels.diag.LogType
@@ -55,7 +56,7 @@ private const val EXPORT_DELAY_SECONDS = 10
 
 private val timeFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss").withZone(ZoneId.systemDefault())
 
-/** Sezione di diagnostica, chiusa di default. */
+/** Diagnostics section, collapsed by default. */
 @Composable
 fun DiagnosticsSection(c: AppContainer, settings: Settings) {
     val context = LocalContext.current
@@ -69,11 +70,11 @@ fun DiagnosticsSection(c: AppContainer, settings: Settings) {
                 .heightIn(min = 48.dp)
                 .clickable(role = Role.Button) { expanded = !expanded }
                 .padding(start = 4.dp),
-            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
                 stringResource(R.string.section_diagnostics),
-                color = BrColors.TestoSecondario,
+                color = AppColors.TextSecondary,
                 fontSize = 13.sp,
                 modifier = Modifier
                     .weight(1f)
@@ -81,7 +82,7 @@ fun DiagnosticsSection(c: AppContainer, settings: Settings) {
             )
             Text(
                 stringResource(if (expanded) R.string.diag_collapse else R.string.diag_expand),
-                color = BrColors.Accento,
+                color = AppColors.Accent,
                 fontSize = 14.sp,
             )
         }
@@ -91,12 +92,12 @@ fun DiagnosticsSection(c: AppContainer, settings: Settings) {
             Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(20.dp))
-                .background(BrColors.Superficie)
+                .background(AppColors.Surface)
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             val notConnected = stringResource(R.string.diag_export_not_connected)
-            Text(stringResource(R.string.diag_export_note), color = BrColors.TestoSecondario, fontSize = 13.sp)
+            Text(stringResource(R.string.diag_export_note), color = AppColors.TextSecondary, fontSize = 13.sp)
             Button(
                 onClick = {
                     if (!status.serviceConnected) {
@@ -109,38 +110,39 @@ fun DiagnosticsSection(c: AppContainer, settings: Settings) {
                     .fillMaxWidth()
                     .heightIn(min = 48.dp),
                 shape = RoundedCornerShape(24.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = BrColors.Sfondo, contentColor = BrColors.Testo),
+                colors = ButtonDefaults.buttonColors(containerColor = AppColors.Background, contentColor = AppColors.TextPrimary),
             ) { Text(stringResource(R.string.diag_export_button, EXPORT_DELAY_SECONDS)) }
 
             val none = stringResource(R.string.diag_none)
             InfoLine(stringResource(R.string.diag_service, stringResource(if (status.serviceConnected) R.string.yes else R.string.no)))
             InfoLine(stringResource(R.string.diag_last_package, status.lastPackage ?: none))
-            InfoLine(stringResource(R.string.diag_last_event, status.lastEventAtMs?.let { timeFormat.format(Instant.ofEpochMilli(it)) } ?: none))
+            val lastEvent = status.lastEventAtMs?.let { timeFormat.format(Instant.ofEpochMilli(it)) } ?: none
+            InfoLine(stringResource(R.string.diag_last_event, lastEvent))
             InfoLine(stringResource(R.string.diag_state, status.controllerState))
             InfoLine(stringResource(R.string.diag_detection, status.lastDetection))
 
             val typeLabels = mapOf(
-                LogType.EVENTO to stringResource(R.string.log_type_evento),
-                LogType.RILEVAMENTO to stringResource(R.string.log_type_rilevamento),
-                LogType.TRANSIZIONE to stringResource(R.string.log_type_transizione),
-                LogType.ERRORE to stringResource(R.string.log_type_errore),
+                LogType.EVENT to stringResource(R.string.log_type_event),
+                LogType.DETECTION to stringResource(R.string.log_type_detection),
+                LogType.TRANSITION to stringResource(R.string.log_type_transition),
+                LogType.ERROR to stringResource(R.string.log_type_error),
             )
             Box(
                 Modifier
                     .fillMaxWidth()
                     .height(300.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(BrColors.Sfondo)
+                    .background(AppColors.Background)
                     .padding(8.dp),
             ) {
                 if (entries.isEmpty()) {
-                    Text(stringResource(R.string.diag_log_empty), color = BrColors.TestoSecondario, fontSize = 13.sp)
+                    Text(stringResource(R.string.diag_log_empty), color = AppColors.TextSecondary, fontSize = 13.sp)
                 } else {
                     Column(Modifier.verticalScroll(rememberScrollState())) {
                         entries.forEach { e ->
                             Text(
                                 formatEntry(e, typeLabels),
-                                color = if (e.type == LogType.ERRORE) BrColors.Avviso else BrColors.Testo,
+                                color = if (e.type == LogType.ERROR) AppColors.Warning else AppColors.TextPrimary,
                                 fontSize = 12.sp,
                                 fontFamily = FontFamily.Monospace,
                                 modifier = Modifier.padding(vertical = 2.dp),
@@ -155,7 +157,7 @@ fun DiagnosticsSection(c: AppContainer, settings: Settings) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 DiagButton(stringResource(R.string.diag_share_log)) {
                     val text = entries.joinToString("\n") { formatEntry(it, typeLabels) }
-                    val file = File(File(context.cacheDir, "shared").apply { mkdirs() }, "blocca-reels-log.txt")
+                    val file = File(File(context.cacheDir, "shared").apply { mkdirs() }, "reels-killer-log.txt")
                     file.writeText(text + "\n")
                     shareFile(context, file, shareTitle)
                 }
@@ -176,7 +178,7 @@ fun DiagnosticsSection(c: AppContainer, settings: Settings) {
             }
             Text(
                 stringResource(R.string.diag_versions, version, c.rules.version),
-                color = BrColors.TestoSecondario,
+                color = AppColors.TextSecondary,
                 fontSize = 12.sp,
             )
         }
@@ -185,13 +187,13 @@ fun DiagnosticsSection(c: AppContainer, settings: Settings) {
 
 @Composable
 private fun InfoLine(text: String) {
-    Text(text, color = BrColors.Testo, fontSize = 13.sp)
+    Text(text, color = AppColors.TextPrimary, fontSize = 13.sp)
 }
 
 @Composable
 private fun DiagButton(text: String, onClick: () -> Unit) {
     TextButton(onClick = onClick, modifier = Modifier.heightIn(min = 48.dp)) {
-        Text(text, color = BrColors.Accento, fontSize = 13.sp)
+        Text(text, color = AppColors.Accent, fontSize = 13.sp)
     }
 }
 
