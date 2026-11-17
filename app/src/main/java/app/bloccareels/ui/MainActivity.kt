@@ -28,11 +28,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import app.bloccareels.AppContainer
-import app.bloccareels.ServiceCommand
 import app.bloccareels.container
 import app.bloccareels.data.Locales
-import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -41,7 +38,7 @@ class MainActivity : AppCompatActivity() {
             navigationBarStyle = SystemBarStyle.dark(Color.TRANSPARENT),
         )
         super.onCreate(savedInstanceState)
-        val c = applicationContext.container
+        val model = UiModel(applicationContext.container)
         setContent {
             ReelsKillerTheme {
                 Box(
@@ -50,7 +47,7 @@ class MainActivity : AppCompatActivity() {
                         .background(AppColors.Background)
                         .safeDrawingPadding(),
                 ) {
-                    AppRoot(c)
+                    AppRoot(model)
                 }
             }
         }
@@ -60,10 +57,10 @@ class MainActivity : AppCompatActivity() {
 private enum class Screen { SETTINGS, MESSAGES, PREVIEW }
 
 @Composable
-private fun AppRoot(c: AppContainer) {
+private fun AppRoot(model: UiModel) {
     val context = LocalContext.current
-    val loaded by c.settings.loaded.collectAsStateWithLifecycle()
-    val settings by c.settings.state.collectAsStateWithLifecycle()
+    val loaded by model.settingsLoaded.collectAsStateWithLifecycle()
+    val settings by model.settings.collectAsStateWithLifecycle()
 
     var serviceOn by remember { mutableStateOf(SystemStatus.isServiceEnabled(context)) }
     var batteryOk by remember { mutableStateOf(SystemStatus.isIgnoringBatteryOptimizations(context)) }
@@ -79,7 +76,7 @@ private fun AppRoot(c: AppContainer) {
     // so that the service and the notification use it too.
     LaunchedEffect(Unit) {
         val ui = Locales.currentUiTag()
-        if (ui != settings.language && ui in Locales.SUPPORTED) c.settings.setLanguage(ui)
+        if (ui != settings.language && ui in Locales.SUPPORTED) model.setLanguage(ui)
     }
 
     var screenName by rememberSaveable { mutableStateOf(Screen.SETTINGS.name) }
@@ -89,7 +86,7 @@ private fun AppRoot(c: AppContainer) {
         OnboardingScreen(
             serviceOn = serviceOn,
             batteryOk = batteryOk,
-            onFinish = { c.appScope.launch { c.settings.setOnboardingDone(true) } },
+            onFinish = { model.setOnboardingDone() },
         )
         return
     }
@@ -98,7 +95,7 @@ private fun AppRoot(c: AppContainer) {
 
     // Permission for the "is on" notification (Android 13+): asked only once.
     val notifLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
-        c.serviceCommands.tryEmit(ServiceCommand.RefreshNotification)
+        model.refreshNotification()
     }
     var notifAsked by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(Unit) {
@@ -112,7 +109,7 @@ private fun AppRoot(c: AppContainer) {
 
     when (screen) {
         Screen.SETTINGS -> SettingsScreen(
-            c = c,
+            model = model,
             settings = settings,
             serviceOn = serviceOn,
             batteryOk = batteryOk,
@@ -120,7 +117,7 @@ private fun AppRoot(c: AppContainer) {
             onPreview = { screenName = Screen.PREVIEW.name },
         )
         Screen.MESSAGES -> MessagesScreen(
-            c = c,
+            model = model,
             initial = settings,
             onBack = { screenName = Screen.SETTINGS.name },
         )

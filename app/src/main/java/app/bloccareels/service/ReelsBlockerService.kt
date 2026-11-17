@@ -1,23 +1,16 @@
 package app.bloccareels.service
 
-import android.Manifest
 import android.accessibilityservice.AccessibilityService
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.content.pm.PackageManager
 import android.media.AudioManager
-import android.os.Build
 import android.os.SystemClock
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityWindowInfo
 import android.view.inputmethod.InputMethodManager
-import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import app.bloccareels.AppContainer
 import app.bloccareels.R
@@ -25,12 +18,10 @@ import app.bloccareels.ServiceCommand
 import app.bloccareels.block.AppMeta
 import app.bloccareels.block.BlockActions
 import app.bloccareels.block.BlockController
-import app.bloccareels.block.Counters
 import app.bloccareels.block.OverlayModel
 import app.bloccareels.container
 import app.bloccareels.data.Locales
 import app.bloccareels.data.Settings
-import app.bloccareels.data.SettingsRepository
 import app.bloccareels.detect.Detection
 import app.bloccareels.detect.ExitAction
 import app.bloccareels.detect.describe
@@ -40,8 +31,6 @@ import app.bloccareels.diag.TreeDumper
 import app.bloccareels.overlay.AudioDucker
 import app.bloccareels.overlay.OverlayManager
 import app.bloccareels.overlay.SystemMusicStream
-import app.bloccareels.ui.MainActivity
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.cancel
@@ -61,13 +50,13 @@ class ReelsBlockerService : AccessibilityService() {
     private lateinit var overlay: OverlayManager
     private lateinit var ducker: AudioDucker
     private var controller: BlockController? = null
+    private val statusNotification = StatusNotification(this, ::localized, ::logError)
 
     private var lastEvalAt = 0L
     private var pendingEval: Job? = null
     private var lastForegroundPackage: String? = null
     private var lastDetection: String? = null
     private var imePackages: Set<String> = emptySet()
-    private var statusNotificationShown = false
     private var receiversRegistered = false
 
     private val settings: StateFlow<Settings> get() = appContainer.settings.state
@@ -139,7 +128,7 @@ class ReelsBlockerService : AccessibilityService() {
             guarded("receiver") { unregisterReceiver(receiver) }
             receiversRegistered = false
         }
-        cancelStatusNotification()
+        statusNotification.cancel()
         if (::log.isInitialized) {
             log.updateStatus { it.copy(serviceConnected = false, controllerState = "IDLE") }
             log.add(LogType.EVENT, reason.replaceFirstChar { it.uppercase() })
@@ -277,22 +266,25 @@ class ReelsBlockerService : AccessibilityService() {
         val ctrl = controller ?: return
         if (lastLanguage != null && lastLanguage != s.language) {
             // Language changed: the notification must be rewritten.
-            cancelStatusNotification()
+            statusNotification.cancel()
         }
         lastLanguage = s.language
         val app = ctrl.currentAppId
         if (!s.masterEnabled || (app != null && !s.isAppEnabled(app))) {
             guarded("disable") { ctrl.onDisabled() }
         }
-        updateStatusNotification()
+        statusNotification.update(statusNotificationWanted())
     }
 
     private fun onCommand(cmd: ServiceCommand) {
         when (cmd) {
             is ServiceCommand.ExportTree -> exportTree(cmd.delaySeconds)
-            ServiceCommand.RefreshNotification -> updateStatusNotification()
+            ServiceCommand.RefreshNotification -> statusNotification.update(statusNotificationWanted())
         }
     }
+
+    /** The status notification is shown while the service runs and blocking is on. */
+    private fun statusNotificationWanted(): Boolean = controller != null && settings.value.masterEnabled
 
     // --------------------------------------------------------------- receiver
 
@@ -304,10 +296,8 @@ class ReelsBlockerService : AccessibilityService() {
                     pendingEval = null
                     controller?.onScreenOff()
                 }
-                // From Android 14 the user can swipe away ongoing notifications too: we put it back.
-                ACTION_NOTIFICATION_DISMISSED -> guarded("notification") {
-                    statusNotificationShown = false
-                    updateStatusNotification()
+                StatusNotification.ACTION_DISMISSED -> guarded("notification") {
+                    statusNotification.onDismissed(statusNotificationWanted())
                 }
             }
         }
@@ -317,7 +307,7 @@ class ReelsBlockerService : AccessibilityService() {
         if (receiversRegistered) return
         val filter = IntentFilter().apply {
             addAction(Intent.ACTION_SCREEN_OFF)
-            addAction(ACTION_NOTIFICATION_DISMISSED)
+            addAction(StatusNotification.ACTION_DISMISSED)
         }
         ContextCompat.registerReceiver(this, receiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED)
         receiversRegistered = true
@@ -342,72 +332,6 @@ class ReelsBlockerService : AccessibilityService() {
         }
     }
 
-    // ---------------------------------------------------- status notification
-
-    /** Quiet, ongoing notification: it exists only while the service runs and blocking is on. */
-    private fun updateStatusNotification() {
-        val shouldShow = controller != null && settings.value.masterEnabled
-        if (shouldShow) showStatusNotification() else cancelStatusNotification()
-    }
-
-    private fun showStatusNotification() {
-        if (statusNotificationShown) return
-        if (Build.VERSION.SDK_INT >= 33 &&
-            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
-        ) {
-            return
-        }
-        val nm = getSystemService(NotificationManager::class.java)
-        val text = localized()
-        // Channel of the old debug notification, no longer used.
-        guarded("debug channel") {
-            nm.cancel(OLD_NOTIFICATION_DEBUG)
-            nm.deleteNotificationChannel(OLD_CHANNEL_DEBUG)
-        }
-        nm.createNotificationChannel(
-            NotificationChannel(CHANNEL_STATUS, text.getString(R.string.status_channel_name), NotificationManager.IMPORTANCE_MIN).apply {
-                description = text.getString(R.string.status_channel_description)
-                setShowBadge(false)
-                enableVibration(false)
-                setSound(null, null)
-            },
-        )
-        val open = PendingIntent.getActivity(
-            this, 2,
-            Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
-        )
-        val dismissed = PendingIntent.getBroadcast(
-            this, 3,
-            Intent(ACTION_NOTIFICATION_DISMISSED).setPackage(packageName),
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
-        )
-        val n = NotificationCompat.Builder(this, CHANNEL_STATUS)
-            .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle(text.getString(R.string.status_notification_title))
-            .setOngoing(true)
-            .setSilent(true)
-            .setShowWhen(false)
-            .setOnlyAlertOnce(true)
-            .setPriority(NotificationCompat.PRIORITY_MIN)
-            .setCategory(NotificationCompat.CATEGORY_SERVICE)
-            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-            .setContentIntent(open)
-            .setDeleteIntent(dismissed)
-            .build()
-        nm.notify(NOTIFICATION_STATUS, n)
-        statusNotificationShown = true
-    }
-
-    private fun cancelStatusNotification() {
-        guarded("notification") {
-            val nm = getSystemService(NotificationManager::class.java)
-            nm.cancel(NOTIFICATION_STATUS)
-            nm.cancel(OLD_NOTIFICATION_DEBUG)
-        }
-        statusNotificationShown = false
-    }
-
     private fun loadImePackages(): Set<String> = try {
         getSystemService(InputMethodManager::class.java).enabledInputMethodList.map { it.packageName }.toSet()
     } catch (_: Exception) {
@@ -419,8 +343,12 @@ class ReelsBlockerService : AccessibilityService() {
         try {
             block()
         } catch (e: Exception) {
-            if (::log.isInitialized) log.error(what, e)
+            logError(what, e)
         }
+    }
+
+    private fun logError(what: String, e: Throwable) {
+        if (::log.isInitialized) log.error(what, e)
     }
 
     // ---------------------------------------------------------------- actions
@@ -443,42 +371,5 @@ class ReelsBlockerService : AccessibilityService() {
     companion object {
         private const val THROTTLE_MS = 250L
         private const val SYSTEM_UI = "com.android.systemui"
-
-        /** Channel id kept from older versions ("stato" = status), so no duplicate channel appears. */
-        private const val CHANNEL_STATUS = "stato"
-        private const val NOTIFICATION_STATUS = 2
-        private const val OLD_CHANNEL_DEBUG = "debug"
-        private const val OLD_NOTIFICATION_DEBUG = 1
-        private const val ACTION_NOTIFICATION_DISMISSED = "app.bloccareels.action.NOTIFICATION_DISMISSED"
-    }
-}
-
-/** Counters saved in the repository; the returned value is available to the block screen at once. */
-private class RepoCounters(
-    private val repo: SettingsRepository,
-    private val scope: CoroutineScope,
-) : Counters {
-    private var date: String? = null
-    private var blocks = 0
-
-    override fun onBlockShown(): Int {
-        val today = repo.todayString()
-        val s = repo.state.value
-        val persisted = if (s.counterDate == today) s.blocksToday else 0
-        if (date != today) {
-            date = today
-            blocks = 0
-        }
-        blocks = maxOf(blocks, persisted) + 1
-        scope.launch { repo.increment(SettingsRepository.Counter.BLOCKS) }
-        return blocks
-    }
-
-    override fun onContinue() {
-        scope.launch { repo.increment(SettingsRepository.Counter.CONTINUE) }
-    }
-
-    override fun onExit() {
-        scope.launch { repo.increment(SettingsRepository.Counter.EXIT) }
     }
 }

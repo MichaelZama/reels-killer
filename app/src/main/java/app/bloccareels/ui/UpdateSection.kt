@@ -24,7 +24,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.LifecycleResumeEffect
-import app.bloccareels.AppContainer
 import app.bloccareels.R
 import app.bloccareels.update.UpdateInstaller
 import kotlinx.coroutines.launch
@@ -35,7 +34,7 @@ const val RELEASES_URL = "$REPO_URL/releases/latest"
 
 /** Installs updates from a downloaded APK, without "restricted settings". */
 @Composable
-fun UpdateSection(c: AppContainer) {
+fun UpdateSection(model: UiModel) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var canInstall by remember { mutableStateOf(UpdateInstaller.canInstall(context)) }
@@ -60,7 +59,7 @@ fun UpdateSection(c: AppContainer) {
             try {
                 UpdateInstaller.install(context, uri)
             } catch (e: Exception) {
-                c.diagnostics.error("Update install", e)
+                model.diagnostics.error("Update install", e)
                 Toast.makeText(context, failed + (e.message ?: ""), Toast.LENGTH_LONG).show()
             } finally {
                 busy = false

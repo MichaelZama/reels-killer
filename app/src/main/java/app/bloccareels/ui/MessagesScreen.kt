@@ -53,7 +53,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import app.bloccareels.AppContainer
 import app.bloccareels.R
 import app.bloccareels.data.CustomMedia
 import app.bloccareels.data.MediaImporter
@@ -69,7 +68,7 @@ private val LEVEL_THUMB = 56.dp
  * A level without media uses the previous level's.
  */
 @Composable
-fun MessagesScreen(c: AppContainer, initial: Settings, onBack: () -> Unit) {
+fun MessagesScreen(model: UiModel, initial: Settings, onBack: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val texts = remember { mutableStateListOf<String>().apply { addAll(initial.messages) } }
@@ -78,14 +77,7 @@ fun MessagesScreen(c: AppContainer, initial: Settings, onBack: () -> Unit) {
     }
     val defaults = stringArrayResource(R.array.default_messages).toList()
 
-    fun persist() {
-        val t = texts.toList()
-        val m = media.toList()
-        c.appScope.launch {
-            c.settings.setLevels(t, m)
-            c.cleanupMedia()
-        }
-    }
+    fun persist() = model.saveLevels(texts.toList(), media.toList())
 
     // Shared media picker: [pickTarget] is the level that receives the file.
     var pickTarget by remember { mutableIntStateOf(-1) }
@@ -109,7 +101,7 @@ fun MessagesScreen(c: AppContainer, initial: Settings, onBack: () -> Unit) {
                 MediaImporter.Result.TooBig -> msgTooBig
                 MediaImporter.Result.Unsupported -> msgUnsupported
                 is MediaImporter.Result.Failed -> {
-                    c.diagnostics.error("Media import", r.error)
+                    model.diagnostics.error("Media import", r.error)
                     msgFailed
                 }
             }
@@ -244,10 +236,7 @@ fun MessagesScreen(c: AppContainer, initial: Settings, onBack: () -> Unit) {
                 texts.addAll(defaults)
                 media.clear()
                 media.addAll(List(defaults.size) { null })
-                c.appScope.launch {
-                    c.settings.resetMessages()
-                    c.cleanupMedia()
-                }
+                model.resetLevels()
             },
             modifier = Modifier
                 .fillMaxWidth()

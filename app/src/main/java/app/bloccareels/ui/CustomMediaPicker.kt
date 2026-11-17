@@ -42,7 +42,6 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import app.bloccareels.AppContainer
 import app.bloccareels.R
 import app.bloccareels.data.Illustration
 import app.bloccareels.data.MediaImporter
@@ -52,7 +51,7 @@ import kotlinx.coroutines.launch
 
 /** Opens the system photo and video picker and imports the chosen file. */
 @Composable
-private fun rememberMediaPicker(c: AppContainer, onBusy: (Boolean) -> Unit): () -> Unit {
+private fun rememberMediaPicker(model: UiModel, onBusy: (Boolean) -> Unit): () -> Unit {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val msgTooLong = stringResource(R.string.media_too_long, MediaImporter.MAX_VIDEO_SECONDS)
@@ -65,14 +64,14 @@ private fun rememberMediaPicker(c: AppContainer, onBusy: (Boolean) -> Unit): () 
         scope.launch {
             val msg = when (val r = MediaImporter.import(context, uri)) {
                 is MediaImporter.Result.Ok -> {
-                    c.settings.setCustomMedia(r.media)
+                    model.setCustomMedia(r.media)
                     null
                 }
                 MediaImporter.Result.TooLong -> msgTooLong
                 MediaImporter.Result.TooBig -> msgTooBig
                 MediaImporter.Result.Unsupported -> msgUnsupported
                 is MediaImporter.Result.Failed -> {
-                    c.diagnostics.error("Media import", r.error)
+                    model.diagnostics.error("Media import", r.error)
                     msgFailed
                 }
             }
@@ -87,9 +86,9 @@ private fun rememberMediaPicker(c: AppContainer, onBusy: (Boolean) -> Unit): () 
 
 /** Fourth thumbnail: the user's media, or "+" to pick one. */
 @Composable
-fun CustomMediaThumb(c: AppContainer, settings: Settings) {
+fun CustomMediaThumb(model: UiModel, settings: Settings) {
     var busy by remember { mutableStateOf(false) }
-    val pick = rememberMediaPicker(c) { busy = it }
+    val pick = rememberMediaPicker(model) { busy = it }
     val media = settings.customMedia
     val selected = settings.illustration == Illustration.CUSTOM
     val sizePx = with(LocalDensity.current) { THUMB_SIZE.roundToPx() }
@@ -97,7 +96,6 @@ fun CustomMediaThumb(c: AppContainer, settings: Settings) {
         value = media?.let { MediaImporter.thumbnail(it, sizePx) }
     }
     val name = stringResource(R.string.ill_custom)
-    val scope = rememberCoroutineScope()
 
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Box(
@@ -107,7 +105,7 @@ fun CustomMediaThumb(c: AppContainer, settings: Settings) {
                 .background(AppColors.Background)
                 .border(if (selected) 3.dp else 1.dp, if (selected) AppColors.Accent else AppColors.Border, CircleShape)
                 .selectable(selected = selected, role = Role.RadioButton, onClick = {
-                    if (media == null) pick() else scope.launch { c.settings.setIllustration(Illustration.CUSTOM) }
+                    if (media == null) pick() else model.setIllustration(Illustration.CUSTOM)
                 })
                 .semantics { contentDescription = name },
             contentAlignment = Alignment.Center,
@@ -134,10 +132,8 @@ fun CustomMediaThumb(c: AppContainer, settings: Settings) {
 
 /** "Change" and "Remove" buttons under the thumbnails, only when there is a custom media. */
 @Composable
-fun CustomMediaActions(c: AppContainer, settings: Settings) {
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    val pick = rememberMediaPicker(c) { }
+fun CustomMediaActions(model: UiModel, settings: Settings) {
+    val pick = rememberMediaPicker(model) { }
     if (settings.customMedia == null) {
         Text(stringResource(R.string.media_hint, MediaImporter.MAX_VIDEO_SECONDS), color = AppColors.TextSecondary, fontSize = 13.sp)
         return
@@ -147,12 +143,7 @@ fun CustomMediaActions(c: AppContainer, settings: Settings) {
             Text(stringResource(R.string.media_change), color = AppColors.Accent)
         }
         TextButton(
-            onClick = {
-                scope.launch {
-                    c.settings.clearCustomMedia()
-                    c.cleanupMedia()
-                }
-            },
+            onClick = { model.removeCustomMedia() },
             modifier = Modifier.heightIn(min = 48.dp),
         ) { Text(stringResource(R.string.media_remove), color = AppColors.TextSecondary) }
     }

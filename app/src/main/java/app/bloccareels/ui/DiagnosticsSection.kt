@@ -39,14 +39,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import app.bloccareels.AppContainer
 import app.bloccareels.R
-import app.bloccareels.ServiceCommand
-import app.bloccareels.data.Settings
 import app.bloccareels.diag.LogEntry
 import app.bloccareels.diag.LogType
 import app.bloccareels.diag.TreeDumper
-import kotlinx.coroutines.launch
 import java.io.File
 import java.time.Instant
 import java.time.ZoneId
@@ -58,11 +54,11 @@ private val timeFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm:s
 
 /** Diagnostics section, collapsed by default. */
 @Composable
-fun DiagnosticsSection(c: AppContainer, settings: Settings) {
+fun DiagnosticsSection(model: UiModel) {
     val context = LocalContext.current
     var expanded by rememberSaveable { mutableStateOf(false) }
-    val entries by c.diagnostics.entries.collectAsStateWithLifecycle()
-    val status by c.diagnostics.status.collectAsStateWithLifecycle()
+    val entries by model.diagnostics.entries.collectAsStateWithLifecycle()
+    val status by model.diagnostics.status.collectAsStateWithLifecycle()
     Column(Modifier.fillMaxWidth()) {
         Row(
             Modifier
@@ -103,7 +99,7 @@ fun DiagnosticsSection(c: AppContainer, settings: Settings) {
                     if (!status.serviceConnected) {
                         Toast.makeText(context, notConnected, Toast.LENGTH_LONG).show()
                     } else {
-                        c.serviceCommands.tryEmit(ServiceCommand.ExportTree(EXPORT_DELAY_SECONDS))
+                        model.exportTree(EXPORT_DELAY_SECONDS)
                     }
                 },
                 modifier = Modifier
@@ -166,7 +162,7 @@ fun DiagnosticsSection(c: AppContainer, settings: Settings) {
                     if (f == null) Toast.makeText(context, noTree, Toast.LENGTH_LONG).show()
                     else shareFile(context, f, shareTitle)
                 }
-                DiagButton(stringResource(R.string.diag_clear)) { c.diagnostics.clear() }
+                DiagButton(stringResource(R.string.diag_clear)) { model.diagnostics.clear() }
             }
 
             val version = remember {
@@ -177,7 +173,7 @@ fun DiagnosticsSection(c: AppContainer, settings: Settings) {
                 }
             }
             Text(
-                stringResource(R.string.diag_versions, version, c.rules.version),
+                stringResource(R.string.diag_versions, version, model.rulesVersion),
                 color = AppColors.TextSecondary,
                 fontSize = 12.sp,
             )

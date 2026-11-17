@@ -43,7 +43,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import app.bloccareels.AppContainer
 import app.bloccareels.R
 import app.bloccareels.data.AppIds
 import app.bloccareels.data.Illustration
@@ -51,12 +50,11 @@ import app.bloccareels.data.Locales
 import app.bloccareels.data.Settings
 import app.bloccareels.overlay.OverlayBinder
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 /** The single, scrolling settings screen. */
 @Composable
 fun SettingsScreen(
-    c: AppContainer,
+    model: UiModel,
     settings: Settings,
     serviceOn: Boolean,
     batteryOk: Boolean,
@@ -64,10 +62,6 @@ fun SettingsScreen(
     onPreview: () -> Unit,
 ) {
     val context = LocalContext.current
-    val repo = c.settings
-    fun save(block: suspend () -> Unit) {
-        c.appScope.launch { block() }
-    }
 
     Column(
         Modifier
@@ -92,9 +86,9 @@ fun SettingsScreen(
                 title = stringResource(R.string.master_switch),
                 note = stringResource(R.string.interruptions_today, settings.blocksToday),
                 checked = settings.masterEnabled,
-                onCheckedChange = { v -> save { repo.setMasterEnabled(v) } },
+                onCheckedChange = { v -> model.setMasterEnabled(v) },
             )
-            val diag by c.diagnostics.status.collectAsStateWithLifecycle()
+            val diag by model.diagnostics.status.collectAsStateWithLifecycle()
             // The service can connect a moment after the app opens: allow a short grace period.
             var graceOver by remember { mutableStateOf(false) }
             LaunchedEffect(Unit) {
@@ -149,7 +143,7 @@ fun SettingsScreen(
 
         // ---------------------------------------------------- Monitored apps
         SectionCard(stringResource(R.string.section_apps)) {
-            val installed = remember { AppIds.ALL.associateWith { c.isAppInstalled(it) } }
+            val installed = remember { AppIds.ALL.associateWith { model.isAppInstalled(it) } }
             AppIds.ALL.forEach { id ->
                 val isInstalled = installed[id] == true
                 val note = when {
@@ -162,7 +156,7 @@ fun SettingsScreen(
                     note = note,
                     checked = isInstalled && settings.isAppEnabled(id),
                     enabled = isInstalled,
-                    onCheckedChange = { v -> save { repo.setAppEnabled(id, v) } },
+                    onCheckedChange = { v -> model.setAppEnabled(id, v) },
                 )
             }
         }
@@ -175,7 +169,7 @@ fun SettingsScreen(
                 selected = settings.truceSeconds,
                 label = { stringResource(R.string.seconds_short, it) },
                 description = { stringResource(R.string.seconds_choice_description, it) },
-                onSelect = { v -> save { repo.setTruceSeconds(v) } },
+                onSelect = { v -> model.setTruceSeconds(v) },
             )
             Spacer(Modifier.height(4.dp))
             Text(stringResource(R.string.delay_label), color = AppColors.TextPrimary, fontSize = 16.sp)
@@ -184,18 +178,18 @@ fun SettingsScreen(
                 selected = settings.continueDelaySeconds,
                 label = { stringResource(R.string.seconds_short, it) },
                 description = { stringResource(R.string.seconds_choice_description, it) },
-                onSelect = { v -> save { repo.setContinueDelaySeconds(v) } },
+                onSelect = { v -> model.setContinueDelaySeconds(v) },
             )
             SwitchRow(
                 title = stringResource(R.string.escalating_label),
                 note = stringResource(R.string.escalating_note),
                 checked = settings.escalatingDelay,
-                onCheckedChange = { v -> save { repo.setEscalatingDelay(v) } },
+                onCheckedChange = { v -> model.setEscalatingDelay(v) },
             )
             SwitchRow(
                 title = stringResource(R.string.mute_label),
                 checked = settings.muteAudio,
-                onCheckedChange = { v -> save { repo.setMuteAudio(v) } },
+                onCheckedChange = { v -> model.setMuteAudio(v) },
             )
         }
 
@@ -223,12 +217,12 @@ fun SettingsScreen(
                     IllustrationThumb(
                         illustration = ill,
                         selected = settings.illustration == ill,
-                        onSelect = { save { repo.setIllustration(ill) } },
+                        onSelect = { model.setIllustration(ill) },
                     )
                 }
-                CustomMediaThumb(c = c, settings = settings)
+                CustomMediaThumb(model = model, settings = settings)
             }
-            CustomMediaActions(c = c, settings = settings)
+            CustomMediaActions(model = model, settings = settings)
             Button(
                 onClick = onPreview,
                 modifier = Modifier
@@ -248,16 +242,16 @@ fun SettingsScreen(
                 description = { languageLabel(it) },
                 onSelect = { tag ->
                     Locales.applyToUi(tag)
-                    save { repo.setLanguage(tag) }
+                    model.setLanguage(tag)
                 },
             )
         }
 
         // --------------------------------------------------------------- Update
-        UpdateSection(c = c)
+        UpdateSection(model = model)
 
         // ---------------------------------------------------------- Diagnostics
-        DiagnosticsSection(c = c, settings = settings)
+        DiagnosticsSection(model = model)
 
         Spacer(Modifier.height(24.dp))
     }
