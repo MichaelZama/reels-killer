@@ -124,7 +124,7 @@ In locale servono JDK 17 e Android SDK:
 ./gradlew testDebugUnitTest assembleDebug
 ```
 
-Per firmare le release la CI legge quattro secrets del repository: `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS` e `KEY_PASSWORD`. Senza secrets l'APK viene firmato con una chiave di debug.
+Per firmare le release la CI legge quattro secrets del repository: `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS` e `KEY_PASSWORD`. Senza secrets le build da `main` vengono firmate con una chiave di debug, mentre un tag `v*` si ferma invece di pubblicare una release che non si aggiornerebbe sopra le precedenti.
 
 ## Licenza
 

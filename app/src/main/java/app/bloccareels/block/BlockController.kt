@@ -55,6 +55,13 @@ class BlockController(
 
     val consecutiveContinueCount: Int get() = consecutiveContinues
 
+    /**
+     * Niente in corso: nessuno stato attivo, nessuna schermata, audio intatto, nessun controllo dopo "Esci".
+     * In questo stato [onForegroundLeft] non fa nulla.
+     */
+    val isIdle: Boolean
+        get() = state == BlockState.INATTIVO && !exiting && !overlayShown && !muted
+
     // ---------------------------------------------------------------- eventi
 
     fun onDetection(d: Detection) {
@@ -140,7 +147,7 @@ class BlockController(
 
     /** L'app in primo piano non è più un'app ospite monitorata (UC-08). */
     fun onForegroundLeft() {
-        if (state == BlockState.INATTIVO && !exiting && !overlayShown && !muted) return
+        if (isIdle) return
         reset("uscito dall'app ospite")
     }
 

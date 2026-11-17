@@ -8,6 +8,12 @@ plugins {
 // Se mancano (build locale o secrets non ancora configurati) si usa la chiave di debug.
 val keystorePath: String? = System.getenv("KEYSTORE_PATH")?.takeIf { it.isNotBlank() && file(it).exists() && file(it).length() > 0 }
 
+// Sui tag di release la CI imposta REQUIRE_RELEASE_SIGNING=true: senza keystore valido ci si ferma,
+// perché un APK firmato con la chiave di debug non si installa sopra le versioni pubblicate.
+if (System.getenv("REQUIRE_RELEASE_SIGNING") == "true" && keystorePath == null) {
+    throw GradleException("REQUIRE_RELEASE_SIGNING=true ma il keystore di release (KEYSTORE_PATH) manca o è vuoto.")
+}
+
 android {
     namespace = "app.bloccareels"
     compileSdk = 37
